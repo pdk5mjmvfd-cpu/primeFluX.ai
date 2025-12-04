@@ -1,0 +1,16 @@
+"""
+ApopToSiS v3 — PrimeFlux Cognitive Runtime
+
+ApopToSiS is a PrimeFlux-based cognitive system that processes
+information through curvature, entropy, and distinction dynamics.
+
+All modules must import using:
+    from ApopToSiS.core...
+    from ApopToSiS.runtime...
+    from ApopToSiS.cognitive...
+    from ApopToSiS.experience...
+    from ApopToSiS.agents...
+"""
+
+__version__ = "3.0"
+

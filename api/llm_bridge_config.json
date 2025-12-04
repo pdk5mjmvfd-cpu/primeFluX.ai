@@ -1,0 +1,8 @@
+{
+    "api_url": "http://localhost:4000/apop_llm",
+    "model": "gpt-4o-mini",
+    "mode": "hybrid",
+    "enabled": false,
+    "timeout": 30.0
+}
+

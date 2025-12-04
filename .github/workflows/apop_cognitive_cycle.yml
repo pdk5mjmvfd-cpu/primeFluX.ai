@@ -1,0 +1,121 @@
+name: Apop Cognitive Cycle
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run LCM refinement every hour
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  agent-cycle:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install -e .
+      
+      - name: Run agent cycle
+        run: |
+          python -m backend.cognitive_loop --cycle agent
+      
+      - name: Commit agent results
+        run: |
+          git config --local user.email "apop@ai"
+          git config --local user.name "ApopAI"
+          git add runtime/agents/*/outbox/*.json
+          git commit -m "Apop: Agent cycle results" || exit 0
+          git push || exit 0
+
+  supervisor-collapse:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install -e .
+      
+      - name: Run supervisor collapse cycle
+        run: |
+          python -m backend.cognitive_loop --cycle collapse
+      
+      - name: Comment PR with results
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Apop: Supervisor collapse cycle completed'
+            })
+
+  lcm-refinement:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install -e .
+      
+      - name: Run LCM refinement
+        run: |
+          python -m backend.cognitive_loop --cycle refinement
+      
+      - name: Commit refinement results
+        run: |
+          git config --local user.email "apop@ai"
+          git config --local user.name "ApopAI"
+          git add runtime/contexts/*.json
+          git commit -m "Apop: LCM refinement" || exit 0
+          git push || exit 0
+
+  memory-compression:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install -e .
+      
+      - name: Compress and hash memory
+        run: |
+          python -m backend.cognitive_loop --cycle compress
+      
+      - name: Create release with compressed memory
+        uses: softprops/action-gh-release@v1
+        with:
+          files: runtime/memory/*.json
+
