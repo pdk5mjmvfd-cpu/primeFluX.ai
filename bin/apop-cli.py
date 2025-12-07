@@ -231,20 +231,22 @@ if __name__ == "__main__":
     # Check for simulate command
     if sys.argv[1] == 'simulate':
         if len(sys.argv) < 4:
-            print("Usage: python bin/apop-cli.py simulate <prime> <steps> [mode] [--presence-off] [--event-off]")
+            print("Usage: python bin/apop-cli.py simulate <prime> <steps> [mode] [--presence-off] [--event-off] [--show-dip]")
             sys.exit(1)
         
         try:
             prime_p = int(sys.argv[2])
             steps = int(sys.argv[3])
-            mode = sys.argv[4] if len(sys.argv) > 4 and sys.argv[4] not in ['--presence-off', '--event-off'] else 'refinement'
+            mode = sys.argv[4] if len(sys.argv) > 4 and sys.argv[4] not in ['--presence-off', '--event-off', '--show-dip'] else 'refinement'
             presence_on = '--presence-off' not in sys.argv
             event_spaces_on = '--event-off' not in sys.argv
+            show_dip = '--show-dip' in sys.argv
             
             # Import particle engine
             try:
                 from core.particle_engine import ParticleSimulator, analyze_results
                 from core.particle_engine.orbitals import pf_atomic_orbitals, QuarkColor
+                from core.particle_engine.particle import OrbitalChild
                 
                 print(f"\n🔬 Running particle simulation...")
                 print(f"   Prime: {prime_p}, Steps: {steps}, Mode: {mode}")

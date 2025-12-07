@@ -37,6 +37,7 @@ except ImportError:
 try:
     from core.particle_engine.simulator import ParticleSimulator
     from core.particle_engine.particle import PFParticle, OrbitalChild
+    from core.particle_engine.engine import ParticleEngine
     from core.particle_engine.analysis import analyze_results, plot_particle_cloud, plot_phase_space
     from core.particle_engine.orbitals import QuarkColor, pf_atomic_orbitals
     PARTICLE_ENGINE_AVAILABLE = True
@@ -45,6 +46,7 @@ except ImportError:
     ParticleSimulator = None
     PFParticle = None
     OrbitalChild = None
+    ParticleEngine = None
     QuarkColor = None
 
 # Check for plotly
@@ -331,6 +333,9 @@ with tab2:
         
         # Event Spaces toggle
         event_spaces_on = st.checkbox("Event Spaces On", value=True, help="If off, orbitals inactive (atom static knot)")
+        
+        # Show Flux Dip checkbox
+        show_flux_dip = st.checkbox("Show Flux Dip", value=False, help="Visualize electrons dipping into nucleus (phase overlay)")
         
         if st.button("Run Simulation", type="primary"):
             with st.spinner("Running particle simulation..."):
