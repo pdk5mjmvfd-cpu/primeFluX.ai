@@ -4,13 +4,17 @@
 
 ## 📚 Documentation & Roadmap
 
+- **[Ecosystem Architecture](ECOSYSTEM_ARCHITECTURE.md)** — Complete ecosystem architecture and component overview
+- **[Ecosystem Capsule](ECOSYSTEM_CAPSULE.json)** — Structured capsule for handoffs (Cursor, Perplexity, Grok)
+- **[Agora Ecosystem Summary](AGORA_ECOSYSTEM_IMPLEMENTATION_SUMMARY.md)** — Agora ecosystem implementation details
+- **[QuantaCoin Summary](QUANTACOIN_IMPLEMENTATION_SUMMARY.md)** — QuantaCoin (ΦQ) implementation details
 - **[FluxAI Refinement Roadmap](FLUXAI_REFINEMENT_ROADMAP.md)** — Complete roadmap and code review for the 7 refinement directions
 - **[AI Collaboration Guide](AI_COLLABORATION_GUIDE.md)** — Guide for AI assistants (Grok, ChatGPT, Auto) working on this codebase
 - **[Implementation Status](IMPLEMENTATION_STATUS.md)** — Current progress tracker for all refinement directions
 - **[Repository Setup Guide](SETUP_REPOSITORY.md)** — Step-by-step guide for setting up the repository
 - **[Quick Reference](QUICK_REFERENCE.md)** — One-page reference for the refinement project
 
-**For AI Assistants:** Start with [AI_COLLABORATION_GUIDE.md](AI_COLLABORATION_GUIDE.md) to understand how to work with this codebase.
+**For AI Assistants:** Start with [AI_COLLABORATION_GUIDE.md](AI_COLLABORATION_GUIDE.md) or load [ECOSYSTEM_CAPSULE.json](ECOSYSTEM_CAPSULE.json) to understand the ecosystem architecture and workflow modes.
 
 ## What ApopToSiS v3 Is
 
@@ -87,6 +91,68 @@ from api.user_interface import run_apop
 result = run_apop("your input text here")
 print(result)
 ```
+
+### Streamlit UI
+
+```bash
+# Launch interactive UI
+python apop.py --ui
+
+# Or directly
+streamlit run api/streamlit_ui.py
+```
+
+## Deployment
+
+### Docker Deployment
+
+**Discrete Shells**: Local-only operation by default. No auto-sync unless explicitly enabled with `--agora` flag.
+
+#### Quick Start
+
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Build and run
+docker-compose up --build
+
+# Access services
+# - FastAPI: http://localhost:8000
+# - Streamlit UI: http://localhost:8501
+```
+
+#### Raspberry Pi / Jetson (ARM64)
+
+```bash
+# Build for ARM64
+docker-compose build --build-arg ARCH=arm64
+
+# Run
+docker-compose up
+```
+
+#### Environment Variables
+
+- `PRESENCE_OP=1` - Enable presence operator (default: on)
+- `APOP_MODE=local` - Runtime mode (local/networked)
+- `OLLAMA_MODEL=llama3.2:3b` - Ollama model to use
+- `QUANTA_PATH=./experience/ledger.jsonl` - Quanta ledger path
+- `AGORA_ENABLED=0` - Agora sync (opt-in, default: off)
+- `DISCRETE_SHELLS=1` - Discrete shells mode (local only)
+
+#### Health Check
+
+```bash
+curl http://localhost:8000/health
+```
+
+### Edge Deployment Notes
+
+- **Discrete Shells**: Each instance operates independently. No automatic parent notification or upstream sync.
+- **Opt-in Sync**: Use `--agora` flag to enable Agora sync (requires explicit user consent).
+- **Local Ledger First**: All transactions logged locally before any potential sync.
+- **Trig Config**: 3-mode split (Research=sin, Refinement=cos, Relations=tan) enforced in UI/CLI.
 
 ## Architecture
 

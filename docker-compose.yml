@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  apop:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ARCH: ${ARCH:-amd64}
+    container_name: apoptosis_apop
+    env_file:
+      - .env
+    environment:
+      - PRESENCE_OP=${PRESENCE_OP:-1}
+      - APOP_MODE=${APOP_MODE:-local}
+      - QUANTA_PATH=${QUANTA_PATH:-/app/experience/ledger.jsonl}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2:3b}
+    volumes:
+      - ./experience:/app/experience
+      - ./models:/app/models
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+    networks:
+      - apoptosis_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: apoptosis_streamlit
+    env_file:
+      - .env
+    environment:
+      - API_URL=http://apop:8000
+    volumes:
+      - ./experience:/app/experience
+    ports:
+      - "8501:8501"
+    depends_on:
+      - apop
+    networks:
+      - apoptosis_net
+    command: ["python", "-m", "streamlit", "run", "api/streamlit_ui.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    restart: unless-stopped
+
+networks:
+  apoptosis_net:
+    driver: bridge
