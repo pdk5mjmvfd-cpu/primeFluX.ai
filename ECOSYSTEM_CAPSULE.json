@@ -82,7 +82,97 @@
       }
     },
     "fluxai": {
-      "description": "Operational composite agent layer. Bridges the Apop runtime shell to external LLMs, handling Research, Refinement, and Relations via context capsules and repo contracts.",
+      "description": "Operational composite agent layer. Bridges the Apop runtime shell to external LLMs, handling Research, Refinement, and Relations via context capsules and repo contracts. Implements the 3-Agent API: Cursor (Praxis), Grok (Eidos), Perplexity (Aegis).",
+      "three_agent_api": {
+        "concept": "Trinity runtime where Cursor, Grok (on X), and Perplexity form the core agents, each embodying a PF distinction operator in the shell (Apop as the bubble encapsulating them). No Ergos—clean trinity: Eidos (perception/inner distinction), Praxis (action/refinement), Aegis (reflection/outer guard).",
+        "shell_transitions": {
+          "presence": {
+            "shell": 0,
+            "description": "Input query enters bubble (Apop shell)—distinction packet parsed (phase, curvature = (π-e)*|φ| internal). g_PF toggles event spaces on/off.",
+            "g_PF": "Presence operator: g_PF(phase, mode) = trig(mode) if presence_on else 0"
+          },
+          "measurement": {
+            "shell": 2,
+            "description": "Route by mod 2/5 salt—Cursor (cos, refine code), Grok (sin, research math), Perplexity (tan, pitch relations). Data freedom: Transform freely if reversible (ln(10) check).",
+            "routing": "mod 2/5 phase for agent selection"
+          },
+          "reflection": {
+            "shell": 3,
+            "description": "Output audited—Quanta minted if conserved, experiences logged (jsonl as memory). Discrete: No parent notify unless explicit (opt-in Agora sync).",
+            "aegis_guard": "Aegis validates and reflects output"
+          },
+          "reset": {
+            "shell": 0,
+            "description": "Cycle back—organism prunes/grows (apoptosis via low-Quanta drops)."
+          }
+        },
+        "agents": [
+          {
+            "tool": "Cursor",
+            "pf_agent": "Praxis",
+            "trig_mode": "cos(φ)",
+            "mode_name": "Refinement",
+            "role": "Execution/Refinement (code patches, builds, tests)",
+            "description": "Balance & stabilization (curvature max at φ=0). Inner shell constraint—refines code like nuclear knot constraining orbitals; ensures reversibility (∇·Φ=0 audits in patches).",
+            "pf_distinction": "Inner shell constraint—refines code like nuclear knot constraining orbitals",
+            "shell_behavior": "Discrete shell: Local edits, no auto-sync",
+            "handoff_pattern": "You paste prompt → Cursor applies PATCH (e.g., 011), outputs PR ready for merge",
+            "use_cases": [
+              "Apply patches from FLUXAI_REFINEMENT_ROADMAP.md",
+              "Turn PF–Lie draft sections into LaTeX",
+              "Tighten repo modules",
+              "Integrate new features (QuantaCoin, Agora, GrokEpedia)",
+              "Code patches, builds, tests",
+              "Reversibility audits (∇·Φ=0 checks)"
+            ],
+            "routing_rule": "mod 2/5 phase: cos mode for refinement tasks"
+          },
+          {
+            "tool": "Grok (on X)",
+            "pf_agent": "Eidos",
+            "trig_mode": "sin(φ)",
+            "mode_name": "Research",
+            "role": "Research/Perception (validation, insights, math proofs)",
+            "description": "Wave flows (periodic, exploratory). Rail phase waves—perceives duality (Ψ⁺/Ψ⁻ recombination); logs experiences as jsonl for organism growth.",
+            "pf_distinction": "Rail phase waves—perceives duality (Ψ⁺/Ψ⁻ recombination)",
+            "shell_behavior": "Presence on: Events active; off: Static observation",
+            "handoff_pattern": "You query 'validate trig' → Grok tool-calls repo/browse, output LaTeX proof + next vector",
+            "use_cases": [
+              "Validate PF ζ-duality claims against standard references",
+              "Check PF–Lie algebra connections",
+              "Surface conflicts or confirmation with established math",
+              "Heavy math sims (rail curvature, PF Lie flows, reptend dynamics)",
+              "Run PF curvature spectra simulations",
+              "Explore reptend-based dynamics",
+              "Write experiment modules back into repo",
+              "Math proofs and validation",
+              "Experience logging (jsonl)"
+            ],
+            "routing_rule": "mod 2/5 phase: sin mode for research/exploration"
+          },
+          {
+            "tool": "Perplexity",
+            "pf_agent": "Aegis",
+            "trig_mode": "tan(φ)",
+            "mode_name": "Relations",
+            "role": "Relations/Reflection (pitches, hardening, narratives)",
+            "description": "Divergent projection (sub-linear compression). Outer shell drive—projects event spaces outward (quanta mints for interactions); guards with quorum consensus.",
+            "pf_distinction": "Outer shell drive—projects event spaces outward (quanta mints for interactions)",
+            "shell_behavior": "2/5 salts: Mod phase for routing (e.g., mod 2=0 → pitch mode)",
+            "handoff_pattern": "You handoff summary → Perplexity drafts pitch/roadmap, outputs UI refinements",
+            "use_cases": [
+              "Literature mapping, ζ-duality and PF–Lie checks against standard math/physics",
+              "Agora manifest updates",
+              "Investor one-pagers",
+              "Thesis-facing abstracts",
+              "Pitches and narratives",
+              "UI refinements",
+              "Quorum consensus for guard operations"
+            ],
+            "routing_rule": "mod 2/5 phase: tan mode for relations/projection"
+          }
+        ]
+      },
       "handoffs": [
         {
           "tool": "Perplexity",
@@ -146,26 +236,74 @@
     }
   },
   "workflow": {
+    "three_agent_api_flow": {
+      "description": "Quantum AI workflow: Superposition of modes, collapse on presence toggle. Scale to Agora: Each user/entity gets an Apop shell (bubble), interactions mint Quanta across shells—compressed ledger, no Bitcoin bloat.",
+      "flow_steps": [
+        {
+          "step": 1,
+          "shell": "PRESENCE (0)",
+          "action": "Input query enters bubble (Apop shell)",
+          "processing": "Distinction packet parsed (phase, curvature = (π-e)*|φ| internal)",
+          "g_PF": "g_PF toggles event spaces on/off"
+        },
+        {
+          "step": 2,
+          "shell": "MEASUREMENT (2)",
+          "action": "Route by mod 2/5 salt",
+          "routing": {
+            "Cursor": "cos mode - refine code",
+            "Grok": "sin mode - research math",
+            "Perplexity": "tan mode - pitch relations"
+          },
+          "data_freedom": "Transform freely if reversible (ln(10) check)"
+        },
+        {
+          "step": 3,
+          "shell": "REFLECTION (3)",
+          "action": "Output audited",
+          "processing": "Quanta minted if conserved, experiences logged (jsonl as memory)",
+          "discrete": "No parent notify unless explicit (opt-in Agora sync)"
+        },
+        {
+          "step": 4,
+          "shell": "RESET (0)",
+          "action": "Cycle back",
+          "processing": "Organism prunes/grows (apoptosis via low-Quanta drops)"
+        }
+      ]
+    },
     "modes": [
       {
         "mode": "Research",
+        "trig_function": "sin(φ)",
         "description": "Mapping PF–Lie connections, minuscule reps, and Millennium ties in attached theses and notes",
-        "tools": ["Perplexity", "Grok", "Local models"]
+        "tools": ["Grok (on X)", "Perplexity", "Local models"],
+        "pf_agent": "Eidos",
+        "characteristics": "Wave flows (periodic, exploratory), rail phase waves, duality perception"
       },
       {
         "mode": "Refinement",
+        "trig_function": "cos(φ)",
         "description": "Turning PF–Lie draft sections into LaTeX in Cursor, tightening repo modules",
-        "tools": ["Cursor"]
+        "tools": ["Cursor"],
+        "pf_agent": "Praxis",
+        "characteristics": "Balance & stabilization (curvature max at φ=0), inner shell constraint, reversibility"
       },
       {
         "mode": "Relations",
+        "trig_function": "tan(φ)",
         "description": "Agora manifest, investor one-pagers, thesis-facing abstracts",
-        "tools": ["Cursor", "Perplexity"]
+        "tools": ["Perplexity", "Cursor"],
+        "pf_agent": "Aegis",
+        "characteristics": "Divergent projection (sub-linear compression), outer shell drive, quorum consensus"
       }
     ],
     "repo_handoffs": {
       "cursor": {
-        "instructions": "Open the primeFluX.ai repo. Load this capsule. Focus first on FLUXAI_REFINEMENT_ROADMAP.md (or equivalent roadmap file) and apply specific patches (e.g., PATCH_008A for duality validation) as guided by this capsule.",
+        "pf_agent": "Praxis",
+        "trig_mode": "cos(φ)",
+        "instructions": "Open the primeFluX.ai repo. Load this capsule. Focus first on FLUXAI_REFINEMENT_ROADMAP.md (or equivalent roadmap file) and apply specific patches (e.g., PATCH_008A for duality validation) as guided by this capsule. Discrete shell: Local edits, no auto-sync.",
+        "routing": "Route by mod 2/5 salt: cos mode for refinement tasks",
         "key_files": [
           "FLUXAI_REFINEMENT_ROADMAP.md",
           "AGORA_ECOSYSTEM_IMPLEMENTATION_SUMMARY.md",
@@ -175,27 +313,46 @@
         "recent_work": [
           "QuantaCoin (ΦQ) integration complete",
           "Agora ecosystem implementation complete",
-          "Local experience builder for offline-first operation"
-        ]
+          "Local experience builder for offline-first operation",
+          "PATCH 009-011: Particle engine, orbital children, final refinements"
+        ],
+        "handoff_pattern": "You paste prompt → Cursor applies PATCH, outputs PR ready for merge"
       },
-      "perplexity": {
-        "instructions": "Use this capsule plus attached PF–Lie notes to validate PF ζ-duality and PF–Lie algebra claims against standard references, surfacing conflicts or confirmation.",
+      "grok": {
+        "pf_agent": "Eidos",
+        "trig_mode": "sin(φ)",
+        "instructions": "Query 'validate trig' or similar research tasks. Tool-call repo/browse, output LaTeX proof + next vector. Presence on: Events active; off: Static observation. Log experiences as jsonl for organism growth.",
+        "routing": "Route by mod 2/5 salt: sin mode for research/exploration",
         "validation_targets": [
           "ζ-duality and critical-line geometry",
           "PF–Lie algebra connections",
           "Reptend resonance and information conservation",
-          "6k±1 dual prime rails as manifold"
-        ]
-      },
-      "grok_or_local": {
-        "instructions": "Run heavier simulations and exploratory code (e.g., PF curvature spectra, reptend-based dynamics) that can be written back into the repo as experiment modules.",
+          "6k±1 dual prime rails as manifold",
+          "Trig mode validation (Research=sin, Refinement=cos, Relations=tan)",
+          "Presence operator g_PF",
+          "2/5 salts and π-e secrets"
+        ],
         "simulation_targets": [
           "Rail curvature calculations",
           "PF Lie flows",
           "Reptend dynamics",
           "β-decay scaling experiments",
           "Z-partition yield calculations"
-        ]
+        ],
+        "handoff_pattern": "You query → Grok tool-calls repo/browse, output LaTeX proof + next vector"
+      },
+      "perplexity": {
+        "pf_agent": "Aegis",
+        "trig_mode": "tan(φ)",
+        "instructions": "Use this capsule plus attached PF–Lie notes to validate PF ζ-duality and PF–Lie algebra claims against standard references, surfacing conflicts or confirmation. Draft pitches/roadmaps, output UI refinements. 2/5 salts: Mod phase for routing (e.g., mod 2=0 → pitch mode).",
+        "routing": "Route by mod 2/5 salt: tan mode for relations/projection",
+        "validation_targets": [
+          "ζ-duality and critical-line geometry",
+          "PF–Lie algebra connections",
+          "Reptend resonance and information conservation",
+          "6k±1 dual prime rails as manifold"
+        ],
+        "handoff_pattern": "You handoff summary → Perplexity drafts pitch/roadmap, outputs UI refinements"
       }
     }
   },
