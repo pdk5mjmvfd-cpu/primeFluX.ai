@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 from typing import List, Optional, Tuple
-from .particle import PFParticle
+from .particle import PFParticle, OrbitalChild, OrbitalShell
 
 
 class ParticleEngine:
@@ -29,6 +29,8 @@ class ParticleEngine:
             presence_on: Whether presence operator is enabled
         """
         self.particles: List[PFParticle] = []
+        self.shells: List[OrbitalShell] = []
+        self.nucleus: Optional[PFParticle] = None  # Nucleus particle (atom center)
         self.mode = mode
         self.presence_on = presence_on
         self.time = 0.0
@@ -97,6 +99,52 @@ class ParticleEngine:
         """Add particle to engine."""
         self.particles.append(particle)
     
+    def update_particle(self, particle: PFParticle, curvature: float, phase: float, dt: float):
+        """
+        Update particle with force calculation.
+        
+        Handles OrbitalChild inheritance from parent shell.
+        
+        Args:
+            particle: Particle to update
+            curvature: Curvature value
+            phase: Phase value
+            dt: Time step
+        """
+        # Calculate base force
+        force = self.calculate_force(particle, curvature, phase)
+        
+        # If OrbitalChild, inherit force from parent
+        if isinstance(particle, OrbitalChild) and particle.parent_shell is not None:
+            # Inherit force: inherit_force = parent.curvature * (π - e)
+            inherit_force_magnitude = particle.parent_shell.curvature * (math.pi - math.e)
+            
+            # Direction based on child position relative to nucleus
+            if self.nucleus is not None:
+                dx = particle.position[0] - self.nucleus.position[0]
+                dy = particle.position[1] - self.nucleus.position[1]
+                dz = particle.position[2] - self.nucleus.position[2]
+                r = math.sqrt(dx**2 + dy**2 + dz**2)
+                
+                if r > 0:
+                    inherit_force = (
+                        (dx / r) * inherit_force_magnitude,
+                        (dy / r) * inherit_force_magnitude,
+                        (dz / r) * inherit_force_magnitude
+                    )
+                    # Add inherited force
+                    force = (
+                        force[0] + inherit_force[0],
+                        force[1] + inherit_force[1],
+                        force[2] + inherit_force[2]
+                    )
+        
+        # Update momentum
+        particle.update_momentum(force, dt)
+        
+        # Update position
+        particle.update_position(dt)
+    
     def step(self, dt: float, curvature: float = 1.0):
         """
         Advance simulation by one step.
@@ -110,14 +158,34 @@ class ParticleEngine:
         
         # Update each particle
         for particle in self.particles:
-            # Calculate force
-            force = self.calculate_force(particle, curvature, phase)
+            self.update_particle(particle, curvature, phase, dt)
+        
+        # Atom movement: outer shells drive nucleus
+        if self.nucleus is not None:
+            # Calculate drag from outer shells
+            atom_velocity = [0.0, 0.0, 0.0]
             
-            # Update momentum
-            particle.update_momentum(force, dt)
+            for shell in self.shells:
+                for child in shell.children:
+                    # Child drag contributes to atom velocity
+                    if hasattr(child, 'drag'):
+                        # Drag direction: from nucleus to child
+                        dx = child.position[0] - self.nucleus.position[0]
+                        dy = child.position[1] - self.nucleus.position[1]
+                        dz = child.position[2] - self.nucleus.position[2]
+                        r = math.sqrt(dx**2 + dy**2 + dz**2)
+                        
+                        if r > 0:
+                            atom_velocity[0] += (dx / r) * child.drag
+                            atom_velocity[1] += (dy / r) * child.drag
+                            atom_velocity[2] += (dz / r) * child.drag
             
-            # Update position
-            particle.update_position(dt)
+            # Update nucleus position: outer drives inner
+            self.nucleus.position = (
+                self.nucleus.position[0] + atom_velocity[0] * dt,
+                self.nucleus.position[1] + atom_velocity[1] * dt,
+                self.nucleus.position[2] + atom_velocity[2] * dt
+            )
         
         # Advance time
         self.time += dt

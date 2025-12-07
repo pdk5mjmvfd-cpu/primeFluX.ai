@@ -7,8 +7,8 @@ Refactored from pf_particle.py
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
-from typing import Optional, Tuple
+from dataclasses import dataclass, field
+from typing import Optional, Tuple, List
 
 
 @dataclass
@@ -87,3 +87,46 @@ class PFParticle:
             charge=data.get("charge", 0.0),
             energy=data.get("energy", 0.0)
         )
+
+
+@dataclass
+class OrbitalChild(PFParticle):
+    """
+    Orbital child particle - inherits from PFParticle.
+    
+    Child orbitals with harmonic frequencies and quark color phases.
+    """
+    parent_shell: Optional['OrbitalShell'] = None
+    harmonic_n: int = 1
+    color_idx: int = 0  # 0=RED, 1=GREEN, 2=BLUE
+    freq: float = 1.0
+    phase: float = 0.0
+    drag: float = 0.0  # Drag force on parent nucleus
+    
+    def __post_init__(self):
+        """Initialize child orbital properties."""
+        super().__post_init__()
+        
+        if self.parent_shell is not None:
+            # Frequency: child freq = parent freq / n
+            self.freq = self.parent_shell.freq / self.harmonic_n
+            
+            # Phase: child phase = parent phase + (2π/3) * color_idx
+            # Quark colors: 0 (RED), 2π/3 (GREEN), 4π/3 (BLUE)
+            self.phase = self.parent_shell.phase + (2 * math.pi / 3) * self.color_idx
+
+
+@dataclass
+class OrbitalShell:
+    """
+    Orbital shell - parent structure for child orbitals.
+    """
+    freq: float = 1.0
+    phase: float = 0.0
+    curvature: float = 1.0
+    children: List[OrbitalChild] = field(default_factory=list)
+    
+    def add_child(self, child: OrbitalChild):
+        """Add child orbital to shell."""
+        child.parent_shell = self
+        self.children.append(child)
