@@ -36,13 +36,16 @@ except ImportError:
 # Particle engine imports
 try:
     from core.particle_engine.simulator import ParticleSimulator
-    from core.particle_engine.particle import PFParticle
+    from core.particle_engine.particle import PFParticle, OrbitalChild
     from core.particle_engine.analysis import analyze_results, plot_particle_cloud, plot_phase_space
+    from core.particle_engine.orbitals import QuarkColor, pf_atomic_orbitals
     PARTICLE_ENGINE_AVAILABLE = True
 except ImportError:
     PARTICLE_ENGINE_AVAILABLE = False
     ParticleSimulator = None
     PFParticle = None
+    OrbitalChild = None
+    QuarkColor = None
 
 # Check for plotly
 try:
@@ -326,6 +329,9 @@ with tab2:
         
         sim_presence = st.checkbox("Presence Operator On", value=True)
         
+        # Event Spaces toggle
+        event_spaces_on = st.checkbox("Event Spaces On", value=True, help="If off, orbitals inactive (atom static knot)")
+        
         if st.button("Run Simulation", type="primary"):
             with st.spinner("Running particle simulation..."):
                 try:
@@ -358,6 +364,23 @@ with tab2:
                     # Get particles for visualization
                     particles = simulator.get_particles()
                     
+                    # Get quark color phases if available
+                    quark_phases = {}
+                    if PARTICLE_ENGINE_AVAILABLE and QuarkColor:
+                        try:
+                            orbitals = pf_atomic_orbitals(
+                                prime=int(prime_p),
+                                presence_on=event_spaces_on
+                            )
+                            for orbital in orbitals:
+                                color_name = orbital.get("quark_color", "RED")
+                                phase = orbital.get("quark_phase", 0.0)
+                                if color_name not in quark_phases:
+                                    quark_phases[color_name] = []
+                                quark_phases[color_name].append(phase)
+                        except Exception:
+                            pass
+                    
                     if particles:
                         # Plot particle cloud
                         st.subheader("Particle Cloud Visualization")
@@ -371,6 +394,95 @@ with tab2:
                                 st.plotly_chart(fig, use_container_width=True)
                             else:
                                 st.pyplot(fig)
+                        
+                        # Quark Colors visualization
+                        if quark_phases:
+                            st.subheader("Quark Colors Visualization")
+                            col1, col2, col3 = st.columns(3)
+                            
+                            red_phases = quark_phases.get("RED", [])
+                            green_phases = quark_phases.get("GREEN", [])
+                            blue_phases = quark_phases.get("BLUE", [])
+                            
+                            with col1:
+                                if red_phases:
+                                    st.metric("RED Phases", f"{len(red_phases)}", f"Avg: {sum(red_phases)/len(red_phases):.3f}")
+                            with col2:
+                                if green_phases:
+                                    st.metric("GREEN Phases", f"{len(green_phases)}", f"Avg: {sum(green_phases)/len(green_phases):.3f}")
+                            with col3:
+                                if blue_phases:
+                                    st.metric("BLUE Phases", f"{len(blue_phases)}", f"Avg: {sum(blue_phases)/len(blue_phases):.3f}")
+                            
+                            # Color cloud plot
+                            if PLOTLY_AVAILABLE and particles:
+                                try:
+                                    # Separate particles by color if OrbitalChild
+                                    red_particles = []
+                                    green_particles = []
+                                    blue_particles = []
+                                    
+                                    for p in particles:
+                                        if isinstance(p, OrbitalChild):
+                                            if p.color_idx == 0:
+                                                red_particles.append(p)
+                                            elif p.color_idx == 1:
+                                                green_particles.append(p)
+                                            elif p.color_idx == 2:
+                                                blue_particles.append(p)
+                                    
+                                    if red_particles or green_particles or blue_particles:
+                                        color_fig = go.Figure()
+                                        
+                                        # Add RED particles
+                                        if red_particles:
+                                            x_red = [p.position[0] for p in red_particles]
+                                            y_red = [p.position[1] for p in red_particles]
+                                            z_red = [p.position[2] for p in red_particles]
+                                            color_fig.add_trace(go.Scatter3d(
+                                                x=x_red, y=y_red, z=z_red,
+                                                mode='markers',
+                                                marker=dict(size=5, color='red'),
+                                                name='RED'
+                                            ))
+                                        
+                                        # Add GREEN particles
+                                        if green_particles:
+                                            x_green = [p.position[0] for p in green_particles]
+                                            y_green = [p.position[1] for p in green_particles]
+                                            z_green = [p.position[2] for p in green_particles]
+                                            color_fig.add_trace(go.Scatter3d(
+                                                x=x_green, y=y_green, z=z_green,
+                                                mode='markers',
+                                                marker=dict(size=5, color='green'),
+                                                name='GREEN'
+                                            ))
+                                        
+                                        # Add BLUE particles
+                                        if blue_particles:
+                                            x_blue = [p.position[0] for p in blue_particles]
+                                            y_blue = [p.position[1] for p in blue_particles]
+                                            z_blue = [p.position[2] for p in blue_particles]
+                                            color_fig.add_trace(go.Scatter3d(
+                                                x=x_blue, y=y_blue, z=z_blue,
+                                                mode='markers',
+                                                marker=dict(size=5, color='blue'),
+                                                name='BLUE'
+                                            ))
+                                        
+                                        color_fig.update_layout(
+                                            title="Quark Colors Cloud",
+                                            scene=dict(
+                                                xaxis_title="X",
+                                                yaxis_title="Y",
+                                                zaxis_title="Z"
+                                            ),
+                                            height=500
+                                        )
+                                        
+                                        st.plotly_chart(color_fig, use_container_width=True)
+                                except Exception as e:
+                                    logger.debug(f"Quark color visualization error: {e}")
                         
                         # Phase space plot
                         st.subheader("Phase Space")
@@ -395,6 +507,7 @@ with tab2:
 - Steps: {steps}
 - Mode: {sim_mode} ({TRIG_MAP.get(sim_mode, sim_mode)})
 - Presence: {'On' if sim_presence else 'Off'}
+- Event Spaces: {'On' if event_spaces_on else 'Off'}
 - Particles: {result['particle_count']}
 
 **Results:**

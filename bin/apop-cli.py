@@ -231,25 +231,51 @@ if __name__ == "__main__":
     # Check for simulate command
     if sys.argv[1] == 'simulate':
         if len(sys.argv) < 4:
-            print("Usage: python bin/apop-cli.py simulate <prime> <steps> [mode] [--presence-off]")
+            print("Usage: python bin/apop-cli.py simulate <prime> <steps> [mode] [--presence-off] [--event-off]")
             sys.exit(1)
         
         try:
             prime_p = int(sys.argv[2])
             steps = int(sys.argv[3])
-            mode = sys.argv[4] if len(sys.argv) > 4 and sys.argv[4] not in ['--presence-off'] else 'refinement'
+            mode = sys.argv[4] if len(sys.argv) > 4 and sys.argv[4] not in ['--presence-off', '--event-off'] else 'refinement'
             presence_on = '--presence-off' not in sys.argv
+            event_spaces_on = '--event-off' not in sys.argv
             
             # Import particle engine
             try:
                 from core.particle_engine import ParticleSimulator, analyze_results
+                from core.particle_engine.orbitals import pf_atomic_orbitals, QuarkColor
                 
                 print(f"\n🔬 Running particle simulation...")
-                print(f"   Prime: {prime_p}, Steps: {steps}, Mode: {mode}, Presence: {'On' if presence_on else 'Off'}")
+                print(f"   Prime: {prime_p}, Steps: {steps}, Mode: {mode}")
+                print(f"   Presence: {'On' if presence_on else 'Off'}")
+                print(f"   Event Spaces: {'On' if event_spaces_on else 'Off'}")
+                
+                if not event_spaces_on:
+                    print("   ⚠️  Atom as pure event space—no dynamics.")
                 
                 # Create and run simulator
                 simulator = ParticleSimulator(mode=mode, presence_on=presence_on)
                 result = simulator.run_simulation(prime=prime_p, steps=steps, dt=0.01, curvature=1.0)
+                
+                # Get quark color phases
+                try:
+                    orbitals = pf_atomic_orbitals(
+                        prime=prime_p,
+                        presence_on=event_spaces_on
+                    )
+                    
+                    red_phases = [o.get("quark_phase", 0.0) for o in orbitals if o.get("quark_color") == "RED"]
+                    green_phases = [o.get("quark_phase", 0.0) for o in orbitals if o.get("quark_color") == "GREEN"]
+                    blue_phases = [o.get("quark_phase", 0.0) for o in orbitals if o.get("quark_color") == "BLUE"]
+                    
+                    red_avg = sum(red_phases) / len(red_phases) if red_phases else 0.0
+                    green_avg = sum(green_phases) / len(green_phases) if green_phases else 0.0
+                    blue_avg = sum(blue_phases) / len(blue_phases) if blue_phases else 0.0
+                    
+                    print(f"\n🎨 Quark Phases: R={red_avg:.3f}, G={green_avg:.3f}, B={blue_avg:.3f}")
+                except Exception as e:
+                    logger.debug(f"Quark phase calculation error: {e}")
                 
                 # Print stats
                 print(f"\n✨ Simulation Complete")
@@ -275,6 +301,7 @@ if __name__ == "__main__":
                     "steps": steps,
                     "mode": mode,
                     "presence_on": presence_on,
+                    "event_spaces_on": event_spaces_on,
                     "result": result,
                     "analysis": analysis
                 }
