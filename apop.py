@@ -14,6 +14,7 @@ Or interactive mode:
 import sys
 import os
 import json
+import argparse
 
 # ANSI color codes for terminal output
 RESET = "\033[0m"
@@ -295,6 +296,51 @@ def run_apop_conversation():
 
 def main():
     """Main entry point."""
+    parser = argparse.ArgumentParser(description="ApopToSiS v3 — PrimeFlux Cognitive Engine")
+    parser.add_argument("--offline", action="store_true", help="Use offline LLM mode")
+    parser.add_argument("--llm-salt", type=str, help="LLM salt (eidos, praxis, aegis)")
+    parser.add_argument("--ui", action="store_true", help="Launch Streamlit UI")
+    parser.add_argument("--agora", action="store_true", help="Enable Agora sync (opt-in)")
+    parser.add_argument("input", nargs="?", help="Input text (optional, will use interactive mode if not provided)")
+    
+    args = parser.parse_args()
+    
+    # If UI flag, launch Streamlit
+    if args.ui:
+        try:
+            import subprocess
+            streamlit_path = os.path.join(os.path.dirname(__file__), "api", "streamlit_ui.py")
+            subprocess.run([sys.executable, "-m", "streamlit", "run", streamlit_path])
+            return 0
+        except Exception as e:
+            print(f"Error launching Streamlit UI: {e}")
+            return 1
+    
+    # If offline mode, use offline LLM
+    if args.offline:
+        try:
+            from ApopToSiS.runtime.llm_salts import OfflineLLM
+            from ApopToSiS.core.distinction_packet import DistinctionPacket
+            
+            offline_llm = OfflineLLM()
+            if args.input:
+                # Process single input
+                salt = args.llm_salt or "praxis"
+                packet = DistinctionPacket.from_input(args.input)
+                response = offline_llm.query_salt(salt, args.input)
+                print(f"Agent: {salt}")
+                print(f"Response: {response}")
+                return 0
+        except ImportError:
+            print("Warning: Offline LLM not available, falling back to normal mode")
+    
+    # If input provided, process it
+    if args.input:
+        # Process single input (simplified)
+        print(f"Processing: {args.input}")
+        # Would integrate with full pipeline here
+        return 0
+    
     # Run autonomous conversational loop
     run_apop_conversation()
     return 0
