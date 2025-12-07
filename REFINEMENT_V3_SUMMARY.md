@@ -30,7 +30,7 @@ Applied 3-patch refinement queue (006-008) to enable Streamlit UI, Docker deploy
 - **Real-time Streaming**: From `/flux/{mode}` endpoint
 
 ### PATCH_007: Docker Multi-Stage Build
-**Commit**: `[pending]`
+**Commit**: `ac1e99e`
 
 **Files Created**:
 - `Dockerfile` - Multi-stage build (builder + runtime)
@@ -49,7 +49,7 @@ Applied 3-patch refinement queue (006-008) to enable Streamlit UI, Docker deploy
 - **Volume Mounts**: Ledger, models, data directories
 
 ### PATCH_008: libp2p Agora Sync
-**Commit**: `[pending]`
+**Commit**: `6de334a`
 
 **Files Created**:
 - `core/agora_sync.py` - Agora sync client (opt-in)
@@ -211,8 +211,10 @@ None - all changes are additive and backward compatible.
 ## Commit History
 
 ```
-[commit] PATCH_008: libp2p Agora sync with discrete shells
-[commit] PATCH_007: Docker edge deployment with trig config
+b24421c feat: Add AgentRouter with presence operator
+6de334a PATCH_008: libp2p Agora sync with discrete shells
+8374321 docs: Add refinement v3 summary
+ac1e99e PATCH_007: Docker edge deployment with trig config
 8f04a4b PATCH_006: Streamlit LCM UI with trig modes + presence op
 ```
 
