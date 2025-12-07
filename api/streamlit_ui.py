@@ -18,6 +18,24 @@ import networkx as nx
 import plotly.graph_objects as go
 import logging
 
+# Particle engine imports
+try:
+    from core.particle_engine.simulator import ParticleSimulator
+    from core.particle_engine.particle import PFParticle
+    from core.particle_engine.analysis import analyze_results, plot_particle_cloud, plot_phase_space
+    PARTICLE_ENGINE_AVAILABLE = True
+except ImportError:
+    PARTICLE_ENGINE_AVAILABLE = False
+    ParticleSimulator = None
+    PFParticle = None
+
+# Check for plotly
+try:
+    import plotly.graph_objects as go
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
+
 st.set_page_config(page_title="Apop LCM UI", layout="wide")
 logger = logging.getLogger(__name__)
 
@@ -95,13 +113,16 @@ st.sidebar.info(
     "Powered by PrimeFlux. Discrete shells: Local only. 2/5 salts mod phase."
 )
 
-# Main UI
-st.title("🌀 Apop LCM Interactive")
-st.caption(
-    f"Running in **{TRIG_MAP[mode]}** | "
-    f"Presence: {'On' if st.session_state.presence_on else 'Off'} | "
-    f"Connected to {API_URL}"
-)
+# Main UI with tabs
+tab1, tab2 = st.tabs(["🌀 LCM Chat", "🔬 Particle Lab"])
+
+with tab1:
+    st.title("🌀 Apop LCM Interactive")
+    st.caption(
+        f"Running in **{TRIG_MAP[mode]}** | "
+        f"Presence: {'On' if st.session_state.presence_on else 'Off'} | "
+        f"Connected to {API_URL}"
+    )
 
 # Chat History
 for message in st.session_state.messages:
@@ -261,3 +282,112 @@ if show_graph and len(st.session_state.graph) > 0:
     except Exception as e:
         st.error(f"Graph visualization error: {e}")
         logger.exception("Error in graph visualization")
+
+with tab2:
+    st.title("🔬 Particle Lab")
+    st.caption("PrimeFlux particle physics simulation")
+    
+    if not PARTICLE_ENGINE_AVAILABLE:
+        st.warning("Particle engine not available. Install dependencies.")
+    else:
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            num_particles = st.number_input("Number of Particles", min_value=1, max_value=100, value=10)
+        
+        with col2:
+            prime_p = st.number_input("Prime p", min_value=2, max_value=97, value=7, step=2)
+        
+        with col3:
+            steps = st.number_input("Simulation Steps", min_value=10, max_value=1000, value=100, step=10)
+        
+        # Mode selector for trig
+        sim_mode = st.selectbox(
+            "Simulation Mode (Trig)",
+            ["research", "refinement", "relations"],
+            format_func=lambda x: TRIG_MAP.get(x, x),
+            index=1
+        )
+        
+        sim_presence = st.checkbox("Presence Operator On", value=True)
+        
+        if st.button("Run Simulation", type="primary"):
+            with st.spinner("Running particle simulation..."):
+                try:
+                    # Create simulator
+                    simulator = ParticleSimulator(
+                        mode=sim_mode,
+                        presence_on=sim_presence
+                    )
+                    
+                    # Run simulation
+                    result = simulator.run_simulation(
+                        prime=int(prime_p),
+                        steps=int(steps),
+                        dt=0.01,
+                        curvature=1.0
+                    )
+                    
+                    # Display results
+                    st.success(f"Simulation complete: {result['particle_count']} particles, {result['steps']} steps")
+                    
+                    # Statistics
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Initial Energy", f"{result['initial_energy']:.3f}")
+                    with col2:
+                        st.metric("Final Energy", f"{result['final_energy']:.3f}")
+                    with col3:
+                        st.metric("Conservation", f"{1.0 - result['energy_conservation']:.4f}")
+                    
+                    # Get particles for visualization
+                    particles = simulator.get_particles()
+                    
+                    if particles:
+                        # Plot particle cloud
+                        st.subheader("Particle Cloud Visualization")
+                        fig = plot_particle_cloud(
+                            particles,
+                            title=f"Particle Cloud (Prime {prime_p}, Mode: {sim_mode})",
+                            show_plot=False
+                        )
+                        if fig:
+                            if PLOTLY_AVAILABLE:
+                                st.plotly_chart(fig, use_container_width=True)
+                            else:
+                                st.pyplot(fig)
+                        
+                        # Phase space plot
+                        st.subheader("Phase Space")
+                        phase_fig = plot_phase_space(
+                            particles,
+                            title="Phase Space (x vs px)",
+                            show_plot=False
+                        )
+                        if phase_fig:
+                            st.pyplot(phase_fig)
+                        
+                        # Analysis
+                        analysis = analyze_results(result)
+                        with st.expander("📊 Analysis"):
+                            st.json(analysis)
+                    
+                    # Stream log
+                    st.subheader("Simulation Log")
+                    log_text = f"""
+**Simulation Parameters:**
+- Prime: {prime_p}
+- Steps: {steps}
+- Mode: {sim_mode} ({TRIG_MAP.get(sim_mode, sim_mode)})
+- Presence: {'On' if sim_presence else 'Off'}
+- Particles: {result['particle_count']}
+
+**Results:**
+- Energy Conservation: {1.0 - result['energy_conservation']:.4f}
+- History Points: {len(result.get('history', []))}
+"""
+                    st.markdown(log_text)
+                    
+                except Exception as e:
+                    st.error(f"Simulation error: {e}")
+                    logger.exception("Error in particle simulation")

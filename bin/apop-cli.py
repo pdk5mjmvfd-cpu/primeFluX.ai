@@ -228,9 +228,75 @@ if __name__ == "__main__":
         print(__doc__)
         sys.exit(1)
     
-    prompt = sys.argv[1]
-    agent = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] not in ['--presence-off'] else None
-    mode = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] not in ['--presence-off'] else 'refinement'
-    presence_on = '--presence-off' not in sys.argv
+    # Check for simulate command
+    if sys.argv[1] == 'simulate':
+        if len(sys.argv) < 4:
+            print("Usage: python bin/apop-cli.py simulate <prime> <steps> [mode] [--presence-off]")
+            sys.exit(1)
+        
+        try:
+            prime_p = int(sys.argv[2])
+            steps = int(sys.argv[3])
+            mode = sys.argv[4] if len(sys.argv) > 4 and sys.argv[4] not in ['--presence-off'] else 'refinement'
+            presence_on = '--presence-off' not in sys.argv
+            
+            # Import particle engine
+            try:
+                from core.particle_engine import ParticleSimulator, analyze_results
+                
+                print(f"\n🔬 Running particle simulation...")
+                print(f"   Prime: {prime_p}, Steps: {steps}, Mode: {mode}, Presence: {'On' if presence_on else 'Off'}")
+                
+                # Create and run simulator
+                simulator = ParticleSimulator(mode=mode, presence_on=presence_on)
+                result = simulator.run_simulation(prime=prime_p, steps=steps, dt=0.01, curvature=1.0)
+                
+                # Print stats
+                print(f"\n✨ Simulation Complete")
+                print(f"   Particles: {result['particle_count']}")
+                print(f"   Initial Energy: {result['initial_energy']:.3f}")
+                print(f"   Final Energy: {result['final_energy']:.3f}")
+                print(f"   Energy Conservation: {1.0 - result['energy_conservation']:.4f}")
+                
+                # Analyze
+                analysis = analyze_results(result)
+                print(f"\n📊 Analysis:")
+                for key, value in analysis.items():
+                    if isinstance(value, float):
+                        print(f"   {key}: {value:.3f}")
+                    else:
+                        print(f"   {key}: {value}")
+                
+                # Log to file
+                Path("experience").mkdir(exist_ok=True)
+                log_entry = {
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "prime": prime_p,
+                    "steps": steps,
+                    "mode": mode,
+                    "presence_on": presence_on,
+                    "result": result,
+                    "analysis": analysis
+                }
+                log_path = Path("experience/particle_sims.jsonl")
+                with open(log_path, "a") as f:
+                    f.write(json.dumps(log_entry) + "\n")
+                
+                print(f"\n💾 Logged to {log_path}")
+                
+            except ImportError as e:
+                print(f"Error: Particle engine not available: {e}")
+                sys.exit(1)
+        
+        except ValueError as e:
+            print(f"Error: Invalid arguments: {e}")
+            sys.exit(1)
     
-    query_apop(prompt, agent, mode, presence_on)
+    else:
+        # Normal query mode
+        prompt = sys.argv[1]
+        agent = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] not in ['--presence-off'] else None
+        mode = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] not in ['--presence-off'] else 'refinement'
+        presence_on = '--presence-off' not in sys.argv
+        
+        query_apop(prompt, agent, mode, presence_on)
