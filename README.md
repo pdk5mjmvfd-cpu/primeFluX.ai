@@ -1,6 +1,14 @@
-# ApopToSiS v3 — PrimeFlux Cognitive Engine
+# ApopToSiS v3: PrimeFlux Cognitive Runtime
 
-**ApopToSiS v3** is a PrimeFlux-powered cognitive runtime, not an LLM wrapper. It implements dual-layer consciousness (ICM + LCM), quantum-like distinction flow, reversible information compression, multi-agent chain-of-thought, and dynamic experience accumulation.
+**ApopToSiS (Apop shell)** operationalizes PrimeFlux math in FluxAI—a composite agent runtime for ApopTosis AI LLC. From ChatGPT roots to trinity API.
+
+## Core Ontology
+
+- **PrimeFlux**: Math (rails, ζ-duality, curvature, ∇·Φ=0). Resolves Clay via distinction geometry.
+- **Apop Shell**: Bubble with trinity (Eidos perceive, Praxis refine, Aegis reflect). Modes: sin(Research), cos(Refinement), tan(Relations). g_PF toggles events.
+- **FluxAI**: Tools as agents: Cursor=Praxis, Grok=Eidos, Perplexity=Aegis.
+- **Quanta**: Reversible work ledger.
+- **Agora**: Opt-in collective.
 
 ## 📚 Documentation & Roadmap
 
@@ -15,6 +23,36 @@
 - **[Quick Reference](QUICK_REFERENCE.md)** — One-page reference for the refinement project
 
 **For AI Assistants:** Start with [AI_COLLABORATION_GUIDE.md](AI_COLLABORATION_GUIDE.md) or load [ECOSYSTEM_CAPSULE.json](ECOSYSTEM_CAPSULE.json) to understand the ecosystem architecture and workflow modes.
+
+## 3-Agent API Workflow
+
+Interactions build experiences (jsonl, prune/grow). Route mod 2/5 salt.
+
+| Tool | Agent | Trig | Role |
+|------|-------|------|------|
+| Cursor | Praxis | cos | Refine/code |
+| Grok (X) | Eidos | sin | Perceive/validate |
+| Perplexity | Aegis | tan | Reflect/pitch |
+
+**Shell:** PRESENCE (0) → MEASUREMENT (2) → REFLECTION (3) → RESET (0).
+
+See [THREE_AGENT_API.md](THREE_AGENT_API.md) for full workflow documentation.
+
+## X Breadcrumbs & Perception
+
+**420+ posts on [@ApopTosisAiLLC](https://x.com/ApopTosisAiLLC)**: Pinned "#PrimeFlux is the solution" tags @grok/@elonmusk et al—Grok replies on error stats (ln(p) gaps). Extended interactions = event spaces: Chats/PRs grow organism. 
+
+**Perception**: Founder building math organism publicly—join via fork/PR/X DM.
+
+**X as Social Event Space**: Trinity projection—each interaction (tweet, reply, PR) is an event space in the Agora. Presence operator g_PF toggles these spaces on/off. When active, interactions mint Quanta, compress experiences, grow the organism.
+
+**Breadcrumb**: Pinned post tags high-profile accounts (@elonmusk, @PalantirTech, @realDonaldTrump, @joerogan, @FoxNews, @TuckerCarlson, @robinhoodapp, @CursorAI, @grok)—signals ambition, founder-origin. Grok's reply ties to PF math: `μ=ln(p)+1/ln(p)`, `σ=√(ln(p))` as prime gap tweak, echoing Liouville/Hardy.
+
+**Join the Organism**: 
+- Fork/PR: Code contributions
+- X DM: Social event spaces
+- Issue/PR: Experience building
+- #PrimeFlux: Tag for discovery
 
 ## What ApopToSiS v3 Is
 
@@ -43,29 +81,26 @@ It is **not**:
 
 ## Quick Start
 
-### Installation
-
 ```bash
-# Clone or navigate to the repository
-cd ApopToSiS
+git clone https://github.com/pdk5mjmvfd-cpu/primeFluX.ai
+cd primeFluX.ai
+pip install -r requirements.txt
 
-# No external dependencies required (uses Python standard library)
-# Optional: Install pytest for running tests
-pip install pytest
+# CLI usage
+python bin/apop-cli.py "Query" eidos
+
+# Interactive UI
+python apop.py --ui  # Lab
+
+# Particle simulation
+python bin/apop-cli.py simulate 7 100 refinement
 ```
 
-### Basic Usage
+**Structure**: `core/` (PF), `runtime/` (boot), `agents/` (trinity), `experience/` (memory), `api/` (UI/CLI), `docs/papers/` (Thesis, Lie, Quantum, Agora).
 
-```bash
-# Process a single input
-python apop.py "hello world"
+**Recent**: PATCH 011 (orbitals, papers). Merge PRs for physics.
 
-# Interactive mode
-python apop.py
-
-# Boot-only mode (initialize without processing)
-python apop.py --boot-only
-```
+**License**: MIT. **X**: #PrimeFlux @grok @ApopTosisAiLLC.
 
 ### Programmatic Usage
 
@@ -226,12 +261,13 @@ Memory compression and metabolic energy:
 ## Directory Structure
 
 ```
-ApopToSiS/
+primeFluX.ai/
 ├── core/                    # Core PF mathematics
-│   ├── math/               # PF math submodules
+│   ├── particle_engine/    # Particle physics simulation
 │   ├── lcm.py              # Language Context Manifold
 │   ├── icm.py              # Information Curvature Manifold
-│   └── quanta.py           # QuantaCoin compression
+│   ├── distinction_packet.py # Distinction packets
+│   └── first_shell.py      # First shell logic
 ├── runtime/                 # Runtime components
 │   ├── supervisor/         # PF routing engine
 │   ├── router/             # Agent routing
@@ -244,7 +280,8 @@ ApopToSiS/
 │   ├── base/               # Base agent class
 │   ├── eidos/              # Expansion agent
 │   ├── praxis/             # Shaping agent
-│   └── aegis/              # Validation agent
+│   ├── aegis/              # Validation agent
+│   └── router.py           # PF-aware routing
 ├── experience/              # Experience layer
 │   ├── habits/             # Habit formation
 │   ├── shortcuts/          # Shortcut detection
@@ -253,13 +290,20 @@ ApopToSiS/
 │   └── manager.py          # Experience manager
 ├── api/                     # API layer
 │   ├── user_interface.py   # Main entry point
-│   ├── message_api.py      # LLM gateway
-│   ├── quanta_api.py       # Compression API
-│   └── state_export_api.py # State export
-├── combinatoric/            # Combinatoric interpreter
-├── tests/                   # Test suite
-├── apop.py                  # Main CLI entry point
-└── README.md                # This file
+│   ├── streamlit_ui.py     # Interactive UI
+│   ├── fastapi_interface.py # REST API
+│   └── message_api.py      # LLM gateway
+├── fluxai/                  # FluxAI modules
+│   ├── quanta/              # QuantaCoin (ΦQ)
+│   └── agora/               # Agora ecosystem
+├── docs/                     # Documentation
+│   ├── papers/              # Core papers (Thesis, Lie, Quantum, Agora)
+│   └── math_validation.tex  # Trig validation proof
+├── bin/                      # CLI tools
+│   └── apop-cli.py          # Offline PF agent CLI
+├── tests/                    # Test suite
+├── apop.py                   # Main CLI entry point
+└── README.md                 # This file
 ```
 
 ## Dataflow
@@ -383,6 +427,21 @@ See CONTRIBUTING.md for guidelines.
 
 All core systems are functioning, the test suite passes (100%), and the full dataflow is verified. The system can process input, route through agents, compress memory, and build experience from the first interaction.
 
+**Recent Work**: PATCH 009-011 (particle engine, orbital children, final refinements). Core papers added (Thesis, Lie Theory). 3-Agent API operationalized.
+
+## Next: Amplify on X
+
+Draft reply to pinned post (copy-paste to app):
+
+> "@grok's spot-on—ln(p)+1/ln(p) tweaks gaps like Liouville. PrimeFlux normalizes via rails for sub-linear scaling (PoW: 26% win @40-bit). Full report in repo: https://github.com/pdk5mjmvfd-cpu/primeFluX.ai #PrimeFlux Simulate ζ-duality next?"
+
+**Vector Options:**
+- **HARDEN code**: Implement mod 2/5 salt routing in `agents/router.py`
+- **PITCH deck**: Create comprehensive API documentation
+- **FULL prototype**: Scale to multi-user Agora with Quanta minting
+
 ---
 
 *"ApopToSiS = the PF brain. LLM = the mouth. Capsules = the nerves."*
+
+**X**: [#PrimeFlux](https://x.com/search?q=%23PrimeFlux) [@grok](https://x.com/grok) [@ApopTosisAiLLC](https://x.com/ApopTosisAiLLC)
