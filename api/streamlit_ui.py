@@ -15,8 +15,23 @@ import json
 import math  # For pi/e secrets
 from datetime import datetime
 import networkx as nx
-import plotly.graph_objects as go
 import logging
+
+# Plotly for visualization
+try:
+    import plotly.graph_objects as go
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
+    go = None
+
+# Matplotlib fallback
+try:
+    import matplotlib.pyplot as plt
+    MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    MATPLOTLIB_AVAILABLE = False
+    plt = None
 
 # Particle engine imports
 try:
@@ -123,21 +138,21 @@ with tab1:
         f"Presence: {'On' if st.session_state.presence_on else 'Off'} | "
         f"Connected to {API_URL}"
     )
-
-# Chat History
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-# Input
-user_input = st.chat_input("Query the flux...")
-
-if user_input:
-    st.session_state.messages.append({"role": "user", "content": user_input})
-    with st.chat_message("user"):
-        st.markdown(user_input)
     
-    with st.chat_message("assistant"):
+    # Chat History
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+    
+    # Input
+    user_input = st.chat_input("Query the flux...")
+
+    if user_input:
+        st.session_state.messages.append({"role": "user", "content": user_input})
+        with st.chat_message("user"):
+            st.markdown(user_input)
+        
+        with st.chat_message("assistant"):
         st.write("🔄 *Thinking...*")
         
         try:
@@ -207,9 +222,9 @@ if user_input:
         except Exception as e:
             st.error(f"Error: {e}")
             logger.exception("Error in streamlit UI")
-
-# Graph Viz
-if show_graph and len(st.session_state.graph) > 0:
+    
+    # Graph Viz
+    if show_graph and len(st.session_state.graph) > 0:
     st.markdown("---")
     st.subheader("📈 Experience Graph (Local Discrete Shell)")
     
@@ -364,7 +379,7 @@ with tab2:
                             title="Phase Space (x vs px)",
                             show_plot=False
                         )
-                        if phase_fig:
+                        if phase_fig and MATPLOTLIB_AVAILABLE:
                             st.pyplot(phase_fig)
                         
                         # Analysis
