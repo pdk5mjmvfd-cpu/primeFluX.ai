@@ -63,13 +63,14 @@ class LCM:
     - Capsule generation
     """
 
-    def __init__(self, icm: Optional[ICM] = None, experience_manager: Any = None) -> None:
+    def __init__(self, icm: Optional[ICM] = None, experience_manager: Any = None, use_operator_core: bool = False) -> None:
         """
         Initialize LCM.
 
         Args:
             icm: Optional ICM instance
             experience_manager: Optional ExperienceManager instance
+            use_operator_core: If True, enable polyform transforms via OperatorCore
         """
         self.state = LCMState()
         self.icm = icm or ICM()
@@ -79,6 +80,18 @@ class LCM:
         self._last_input_tokens: list[str] = []
         self._last_triplets: list[Triplet] = []
         self._last_user_text: str = ""
+        self.use_operator_core = use_operator_core
+        
+        # Initialize OperatorCore if enabled
+        if use_operator_core:
+            try:
+                from fluxai.operator_core.polyform_ops import ReversiblePolyformOps
+                self.operator_core = ReversiblePolyformOps(salt=0)
+            except ImportError:
+                self.use_operator_core = False
+                self.operator_core = None
+        else:
+            self.operator_core = None
 
     def process_tokens(self, tokens: list[str]) -> None:
         """
@@ -406,6 +419,22 @@ class LCM:
                 "flux_label": flux_label,
             },
         }
+        
+        # Optional polyform transform via OperatorCore
+        if self.use_operator_core and self.operator_core is not None:
+            try:
+                from fluxai.memory.polyform_int import PrimeFluxInt
+                # Encode capsule data as polyform
+                capsule_pfi = PrimeFluxInt(salt=int(time.time() * 1000) % (2**32))
+                capsule_pfi.encode(capsule, salt=capsule_pfi.salt)
+                
+                # Add polyform signature to metadata
+                capsule["metadata"]["polyform_enabled"] = True
+                capsule["metadata"]["polyform_salt"] = capsule_pfi.salt
+                capsule["metadata"]["polyform_payload"] = capsule_pfi.payload[:32]  # First 32 chars
+            except Exception as e:
+                # Fallback: continue without polyform
+                capsule["metadata"]["polyform_error"] = str(e)
         
         return capsule
 

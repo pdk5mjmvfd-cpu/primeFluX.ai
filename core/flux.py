@@ -19,9 +19,17 @@ Thus flux never "dampens", it only stabilizes at Shell 4.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Protocol, Any
+from typing import Protocol, Any, Optional
 import math
 from .pf_core import PFState, PFManifoldState
+
+# Optional FluxAI OperatorCore integration
+try:
+    from fluxai.operator_core.polyform_ops import ReversiblePolyformOps
+    OPERATOR_CORE_AVAILABLE = True
+except ImportError:
+    OPERATOR_CORE_AVAILABLE = False
+    ReversiblePolyformOps = None
 
 
 @dataclass
@@ -154,7 +162,7 @@ def curvature_gradient(state: PFManifoldState) -> float:
     return gradient
 
 
-def flux_amplitude(state: PFState) -> float:
+def flux_amplitude(state: PFState, use_operator_core: bool = False, operator_core: Optional[ReversiblePolyformOps] = None) -> float:
     """
     Compute the flux amplitude for a state.
     
@@ -165,10 +173,28 @@ def flux_amplitude(state: PFState) -> float:
     
     Args:
         state: PF state
+        use_operator_core: If True, use reversible polyform operations
+        operator_core: Optional ReversiblePolyformOps instance
 
     Returns:
         Flux amplitude (error-driven, not error-limited)
     """
+    # Use polyform operations if enabled
+    if use_operator_core and OPERATOR_CORE_AVAILABLE and operator_core is not None:
+        # Encode state as polyform
+        from fluxai.memory.polyform_int import PrimeFluxInt
+        state_pfi = PrimeFluxInt(salt=int(state.value * 1000) % (2**32))
+        state_pfi.encode({
+            "value": state.value,
+            "curvature": state.curvature,
+            "entropy": state.entropy,
+            "error": state.measurement_error
+        }, salt=state_pfi.salt)
+        
+        # Use polyform flux amplitude
+        return operator_core.flux_amplitude_polyform(state_pfi)
+    
+    # Standard computation
     # Compute components
     dx = abs(state.value)  # Value change component
     curvature_component = abs(state.curvature)

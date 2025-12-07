@@ -32,6 +32,30 @@ from .experience_graph.experience_graph import ExperienceGraph
 from ApopToSiS.runtime.capsules import Capsule
 from ApopToSiS.runtime.state.state import PFState
 
+# PrimeFluxInt integration (optional)
+try:
+    from fluxai.memory.polyform_int import PrimeFluxInt
+    POLYFORM_AVAILABLE = True
+except ImportError:
+    POLYFORM_AVAILABLE = False
+    PrimeFluxInt = None
+
+# QuantaCoin integration (optional)
+try:
+    from fluxai.quanta.quanta_core import QuantaCoin
+    QUANTA_AVAILABLE = True
+except ImportError:
+    QUANTA_AVAILABLE = False
+    QuantaCoin = None
+
+# Agora integration (optional)
+try:
+    from fluxai.agora.agora_core import AgoraEcosystem
+    AGORA_AVAILABLE = True
+except ImportError:
+    AGORA_AVAILABLE = False
+    AgoraEcosystem = None
+
 
 class ExperienceManager:
     """
@@ -40,16 +64,17 @@ class ExperienceManager:
     Updates after every Supervisor step.
     """
 
-    def __init__(self, repo_path: str = ".") -> None:
+    def __init__(self, repo_path: str = ".", use_polyform: bool = False) -> None:
         """
         Initialize Experience Manager.
 
         Args:
             repo_path: Path to repository
+            use_polyform: If True, enable PrimeFluxInt encoding for objects (default: False)
         """
         self.habits = HabitManager(repo_path=repo_path)
         self.shortcuts = ShortcutManager(repo_path=repo_path)
-        self.objects = ObjectMemory(repo_path=repo_path)
+        self.objects = ObjectMemory(repo_path=repo_path, use_polyform=use_polyform)
         self.skills = SkillManager(
             repo_path=repo_path,
             habit_manager=self.habits,
@@ -67,6 +92,7 @@ class ExperienceManager:
         self.shortcut_signals = self.shortcut_counts
         self.object_signals = self.object_counts
         self._last_state: PFState | None = None
+        self.use_polyform = use_polyform and POLYFORM_AVAILABLE
 
     def update(self, capsule: Capsule, state: PFState) -> None:
         """
@@ -199,4 +225,209 @@ class ExperienceManager:
         )
         
         return experience_factor
+    
+    def quanta_etch(
+        self,
+        experience_delta: dict[str, Any],
+        quanta: int,
+        holder_prime: Optional[int] = None
+    ) -> dict[str, Any]:
+        """
+        Compress experience delta to polyform lease.
+        
+        Creates lease {holder=p, epoch=e, ttl} and updates objects.json
+        with ΦQ balances.
+        
+        Args:
+            experience_delta: Experience delta to compress
+            quanta: Quanta amount
+            holder_prime: Optional prime number for holder (defaults to 2)
+            
+        Returns:
+            Lease dictionary with polyform encoding
+        """
+        if not QUANTA_AVAILABLE or not QuantaCoin:
+            # Fallback: return simple lease
+            return {
+                "holder": holder_prime or 2,
+                "epoch": 0,
+                "ttl": 30,
+                "quanta": quanta,
+                "polyform_enabled": False
+            }
+        
+        if holder_prime is None:
+            holder_prime = 2  # Default prime
+        
+        # Create lease structure
+        import time
+        lease_data = {
+            "holder": holder_prime,
+            "epoch": 0,  # Current epoch
+            "ttl": 30,  # Time-to-live in epochs
+            "quanta": quanta,
+            "experience_delta": experience_delta,
+            "timestamp": time.time()
+        }
+        
+        # Encode as polyform if available
+        lease_polyform = None
+        if POLYFORM_AVAILABLE and PrimeFluxInt:
+            try:
+                salt = int(time.time() * 1000) % (2**32)
+                lease_pfi = PrimeFluxInt(salt=salt)
+                lease_pfi.encode(lease_data, salt=salt)
+                lease_polyform = lease_pfi.to_dict() if hasattr(lease_pfi, 'to_dict') else {
+                    "salt": lease_pfi.salt,
+                    "payload": lease_pfi.payload
+                }
+            except Exception as e:
+                # Fallback if polyform encoding fails
+                lease_polyform = None
+        
+        # Update objects with ΦQ balance (store in metadata)
+        try:
+            # Create a signature for the quanta balance object
+            import hashlib
+            quanta_signature = hashlib.sha256(
+                f"quanta_balance_{holder_prime}".encode('utf-8')
+            ).hexdigest()
+            
+            # Try to get existing object
+            existing_obj = self.objects.get_object(quanta_signature)
+            
+            if existing_obj:
+                # Update existing object metadata
+                existing_obj.metadata["quanta"] = existing_obj.metadata.get("quanta", 0) + quanta
+                existing_obj.metadata["holder"] = holder_prime
+                existing_obj.metadata["lease"] = lease_data
+                existing_obj.metadata["polyform"] = lease_polyform
+                existing_obj.count += 1
+            else:
+                # Create new object with quanta metadata
+                from .objects.object_memory import Object
+                quanta_obj = Object(
+                    signature=quanta_signature,
+                    triplets=[],
+                    metadata={
+                        "quanta": quanta,
+                        "holder": holder_prime,
+                        "lease": lease_data,
+                        "polyform": lease_polyform,
+                        "type": "quanta_balance"
+                    }
+                )
+                self.objects.store_object(quanta_obj)
+        except Exception as e:
+            # Silently fail if objects update fails
+            pass
+        
+        return {
+            "holder": holder_prime,
+            "epoch": 0,
+            "ttl": 30,
+            "quanta": quanta,
+            "lease": lease_data,
+            "polyform": lease_polyform,
+            "polyform_enabled": lease_polyform is not None
+        }
+    
+    def agora_etch(
+        self,
+        event_delta: dict[str, Any],
+        quanta: int,
+        agent_prime: Optional[int] = None
+    ) -> dict[str, Any]:
+        """
+        Compress event delta to polyform lease in Agora ecosystem.
+        
+        Updates objects.json with agent primes + yields.
+        
+        Args:
+            event_delta: Event delta to compress
+            quanta: Quanta amount
+            agent_prime: Optional agent prime ID
+            
+        Returns:
+            Agora etch result with polyform lease
+        """
+        if not AGORA_AVAILABLE or not AgoraEcosystem:
+            return {
+                "status": "error",
+                "message": "Agora ecosystem not available"
+            }
+        
+        if agent_prime is None:
+            agent_prime = 2  # Default prime
+        
+        # Create lease structure
+        import time
+        lease_data = {
+            "holder": agent_prime,
+            "epoch": 0,
+            "ttl": 30,
+            "quanta": quanta,
+            "event_delta": event_delta,
+            "timestamp": time.time()
+        }
+        
+        # Encode as polyform if available
+        lease_polyform = None
+        if POLYFORM_AVAILABLE and PrimeFluxInt:
+            try:
+                salt = int(time.time() * 1000) % (2**32)
+                lease_pfi = PrimeFluxInt(salt=salt)
+                lease_pfi.encode(lease_data, salt=salt)
+                lease_polyform = lease_pfi.to_dict() if hasattr(lease_pfi, 'to_dict') else {
+                    "salt": lease_pfi.salt,
+                    "payload": lease_pfi.payload
+                }
+            except Exception:
+                lease_polyform = None
+        
+        # Update objects with agent prime and yields
+        try:
+            import hashlib
+            agent_signature = hashlib.sha256(
+                f"agora_agent_{agent_prime}".encode('utf-8')
+            ).hexdigest()
+            
+            existing_obj = self.objects.get_object(agent_signature)
+            
+            if existing_obj:
+                # Update existing agent object
+                existing_obj.metadata["agent_prime"] = agent_prime
+                existing_obj.metadata["quanta"] = existing_obj.metadata.get("quanta", 0) + quanta
+                existing_obj.metadata["lease"] = lease_data
+                existing_obj.metadata["polyform"] = lease_polyform
+                existing_obj.metadata["event_delta"] = event_delta
+                existing_obj.count += 1
+            else:
+                # Create new agent object
+                from .objects.object_memory import Object
+                agent_obj = Object(
+                    signature=agent_signature,
+                    triplets=[],
+                    metadata={
+                        "agent_prime": agent_prime,
+                        "quanta": quanta,
+                        "lease": lease_data,
+                        "polyform": lease_polyform,
+                        "event_delta": event_delta,
+                        "type": "agora_agent"
+                    }
+                )
+                self.objects.store_object(agent_obj)
+        except Exception:
+            # Silently fail if objects update fails
+            pass
+        
+        return {
+            "status": "success",
+            "agent_prime": agent_prime,
+            "quanta": quanta,
+            "lease": lease_data,
+            "polyform": lease_polyform,
+            "polyform_enabled": lease_polyform is not None
+        }
 

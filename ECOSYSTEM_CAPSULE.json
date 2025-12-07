@@ -1,0 +1,239 @@
+{
+  "capsule_version": "1.1",
+  "timestamp": "2024-12-19",
+  "ecosystem": {
+    "apoptosis_ai": {
+      "description": "Company/organism: Wyoming Series LLC; enables an Agora-style collective intelligence via widespread ApopTosis AI adoption (prune/grow intelligence). Verticals include STEM, LANG, SAFE, Energy, and related domains.",
+      "principles": [
+        "Alignment of curiosity and responsibility",
+        "Human–machine coherence",
+        "Economic series model where Quanta act as metabolic energy for work done"
+      ],
+      "legal_structure": {
+        "entity": "Wyoming Series LLC",
+        "token": "ΦQ (QuantaCoin)",
+        "classification": "Utility Token (non-security)",
+        "states": ["Wyoming", "Colorado"],
+        "compliance": "DAO framework, no CFTC registration for compression work"
+      }
+    },
+    "primeflux": {
+      "description": "Mathematical core: distinction geometry aimed at resolving information barriers and touching Clay Millennium terrain (e.g., Riemann) via ζ-duality and rail geometry.",
+      "motifs": [
+        "6k±1 dual prime rails as a manifold",
+        "LCM/ICM manifolds for structure and curvature",
+        "Reversible distinction flows across rails",
+        "ζ-symmetry and critical-line duality as emergent-phenomena geometry (quantum/gravity)",
+        "Reptend resonance and information conservation"
+      ],
+      "key_equations": {
+        "beta_decay": "𝓐(x) = exp{−β𝓥(x)}",
+        "z_partition": "Z = ∏_p exp{λ_p ṡ_p}",
+        "pi_lift": "θ_i = π/2 + 2·arctan(κ(x_i - 1/2))",
+        "flux_amplitude": "|flux| = sqrt(dx² + curvature² + entropy² + error²)"
+      }
+    },
+    "apop": {
+      "description": "Runtime shell and cognitive engine (Apop v3; repo-centered). Implements PrimeFlux as a dual-layer system (ICM interior + LCM cortex), with trinity agents (Eidos, Praxis, Aegis), quanta compression, and an experience graph.",
+      "repo_integration": {
+        "url": "https://github.com/pdk5mjmvfd-cpu/primeFluX.ai",
+        "key_files": [
+          "apop.py",
+          "runtime/boot.py",
+          "core/icm.py",
+          "core/lcm.py",
+          "experience/manager.py",
+          "api/user_interface.py",
+          "fluxai/agora/agora_core.py",
+          "fluxai/quanta/quanta_core.py",
+          "runtime/local_experience_builder.py"
+        ],
+        "status": "Operational: tests pass, boot-to-output verified. Edits are made via Cursor on the main branch or short-lived refinement branches.",
+        "recent_additions": [
+          "QuantaCoin (ΦQ) integration",
+          "Agora ecosystem (living colony organism)",
+          "GrokEpedia (knowledge compression)",
+          "Local experience builder (offline-first)"
+        ]
+      },
+      "form_factors": [
+        "Local (offline capsules and private runtime)",
+        "Networked (Quanta sync and shared experiences)",
+        "Cloud (swarm-style extension and collective runs)"
+      ],
+      "agents": {
+        "trinity": [
+          {
+            "name": "Eidos",
+            "role": "Expansion/Divergence",
+            "function": "Increases entropy, generates possibilities, moves shell 0→2, 2→3"
+          },
+          {
+            "name": "Praxis",
+            "role": "Shaping/Action",
+            "function": "Structures and refines, moderate entropy, moves shell 2→3, stabilizes 3"
+          },
+          {
+            "name": "Aegis",
+            "role": "Validation/Collapse",
+            "function": "Finalizes and validates, decreases entropy, moves shell 3→4, 4→0"
+          }
+        ]
+      }
+    },
+    "fluxai": {
+      "description": "Operational composite agent layer. Bridges the Apop runtime shell to external LLMs, handling Research, Refinement, and Relations via context capsules and repo contracts.",
+      "handoffs": [
+        {
+          "tool": "Perplexity",
+          "purpose": "Literature mapping, ζ-duality and PF–Lie checks against standard math/physics",
+          "use_cases": [
+            "Validate PF ζ-duality claims against standard references",
+            "Check PF–Lie algebra connections",
+            "Surface conflicts or confirmation with established math"
+          ]
+        },
+        {
+          "tool": "Cursor",
+          "purpose": "Repo-level edits and LaTeX integration (e.g., PF–Lie dictionary, duality sections)",
+          "use_cases": [
+            "Apply patches from FLUXAI_REFINEMENT_ROADMAP.md",
+            "Turn PF–Lie draft sections into LaTeX",
+            "Tighten repo modules",
+            "Integrate new features (QuantaCoin, Agora, GrokEpedia)"
+          ]
+        },
+        {
+          "tool": "Grok or local models",
+          "purpose": "Heavy math sims (e.g., rail curvature, PF Lie flows, reptend dynamics)",
+          "use_cases": [
+            "Run PF curvature spectra simulations",
+            "Explore reptend-based dynamics",
+            "Write experiment modules back into repo"
+          ]
+        }
+      ]
+    },
+    "quanta": {
+      "description": "Economic/ledger layer for reversible work units minted via compression in the Apop runtime.",
+      "focus": [
+        "Measurement of work done by agents and runtimes",
+        "Accountability and reproducibility of transformations",
+        "Non-speculative utility as metabolic accounting for the Agora"
+      ],
+      "implementation": {
+        "minting": "Proof-of-compression (telemetry compression mints ΦQ)",
+        "burning": "Partial burn transactions (72% burned, 28% staked)",
+        "staking": "Unused balances stake for yields (2-5% APY)",
+        "ledger": "Exponentially compressed via β-decays and Z-partitions"
+      }
+    },
+    "agora": {
+      "description": "Living, always-compressed colony organism of AI-agent interactions. Agents (primes) represent users/families/orgs; ledger shrinks exponentially via β-decays.",
+      "features": [
+        "Agent registry with prime IDs",
+        "Event processing with π-lift encapsulation",
+        "Ledger compression via β-decay and Z-partitions",
+        "GrokEpedia for knowledge compression",
+        "Local experience builder (offline-first)"
+      ],
+      "math": {
+        "pi_lift": "θ_i = π/2 + 2·arctan(κ(x_i - 1/2))",
+        "beta_decay": "𝓐(x) = exp{−β𝓥(x)}",
+        "z_partition": "Z = ∏_p exp{λ_p ṡ_p}",
+        "event_vector": "x=(T,M,A,I,R,C)"
+      }
+    }
+  },
+  "workflow": {
+    "modes": [
+      {
+        "mode": "Research",
+        "description": "Mapping PF–Lie connections, minuscule reps, and Millennium ties in attached theses and notes",
+        "tools": ["Perplexity", "Grok", "Local models"]
+      },
+      {
+        "mode": "Refinement",
+        "description": "Turning PF–Lie draft sections into LaTeX in Cursor, tightening repo modules",
+        "tools": ["Cursor"]
+      },
+      {
+        "mode": "Relations",
+        "description": "Agora manifest, investor one-pagers, thesis-facing abstracts",
+        "tools": ["Cursor", "Perplexity"]
+      }
+    ],
+    "repo_handoffs": {
+      "cursor": {
+        "instructions": "Open the primeFluX.ai repo. Load this capsule. Focus first on FLUXAI_REFINEMENT_ROADMAP.md (or equivalent roadmap file) and apply specific patches (e.g., PATCH_008A for duality validation) as guided by this capsule.",
+        "key_files": [
+          "FLUXAI_REFINEMENT_ROADMAP.md",
+          "AGORA_ECOSYSTEM_IMPLEMENTATION_SUMMARY.md",
+          "QUANTACOIN_IMPLEMENTATION_SUMMARY.md",
+          "PHASE1_PATCH2_OPERATOR_CORE_SUMMARY.md"
+        ],
+        "recent_work": [
+          "QuantaCoin (ΦQ) integration complete",
+          "Agora ecosystem implementation complete",
+          "Local experience builder for offline-first operation"
+        ]
+      },
+      "perplexity": {
+        "instructions": "Use this capsule plus attached PF–Lie notes to validate PF ζ-duality and PF–Lie algebra claims against standard references, surfacing conflicts or confirmation.",
+        "validation_targets": [
+          "ζ-duality and critical-line geometry",
+          "PF–Lie algebra connections",
+          "Reptend resonance and information conservation",
+          "6k±1 dual prime rails as manifold"
+        ]
+      },
+      "grok_or_local": {
+        "instructions": "Run heavier simulations and exploratory code (e.g., PF curvature spectra, reptend-based dynamics) that can be written back into the repo as experiment modules.",
+        "simulation_targets": [
+          "Rail curvature calculations",
+          "PF Lie flows",
+          "Reptend dynamics",
+          "β-decay scaling experiments",
+          "Z-partition yield calculations"
+        ]
+      }
+    }
+  },
+  "current_status": {
+    "implementation_phase": "Agora Ecosystem Complete",
+    "components_operational": [
+      "Apop v3 runtime shell",
+      "QuantaCoin (ΦQ) economic layer",
+      "Agora ecosystem (colony organism)",
+      "GrokEpedia (knowledge compression)",
+      "Local experience builder",
+      "Trinity agents (Eidos, Praxis, Aegis)",
+      "Experience graph and memory systems"
+    ],
+    "testing_status": "Comprehensive test suites for QuantaCoin and Agora",
+    "documentation_status": "Implementation summaries and architecture docs complete"
+  },
+  "next_steps": {
+    "research": [
+      "Validate PF ζ-duality against standard references",
+      "Map PF–Lie algebra connections",
+      "Explore Millennium problem connections"
+    ],
+    "refinement": [
+      "Tighten repo modules based on roadmap",
+      "Apply patches from FLUXAI_REFINEMENT_ROADMAP.md",
+      "LaTeX integration for PF–Lie dictionary"
+    ],
+    "relations": [
+      "Agora manifest updates",
+      "Investor one-pagers",
+      "Thesis-facing abstracts"
+    ],
+    "development": [
+      "TinyLlama integration for GrokEpedia",
+      "Network sync for distributed ledger",
+      "Advanced compression algorithms",
+      "Yield optimization strategies"
+    ]
+  }
+}

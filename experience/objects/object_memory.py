@@ -21,6 +21,14 @@ from pathlib import Path
 from collections import Counter
 from ApopToSiS.combinatoric.interpreter import CombinatoricDistinctionPacket
 
+# PrimeFluxInt integration (optional, for polyform-enabled memory)
+try:
+    from fluxai.memory.polyform_int import PrimeFluxInt
+    POLYFORM_AVAILABLE = True
+except ImportError:
+    POLYFORM_AVAILABLE = False
+    PrimeFluxInt = None
+
 
 @dataclass
 class Object:
@@ -73,15 +81,17 @@ class ObjectMemory:
     Objects are like "functions", "variables", "emotions", "shapes", "ideas".
     """
 
-    def __init__(self, repo_path: str = ".") -> None:
+    def __init__(self, repo_path: str = ".", use_polyform: bool = False) -> None:
         """
         Initialize ObjectMemory.
 
         Args:
             repo_path: Path to repository
+            use_polyform: If True, use PrimeFluxInt for encoding (default: False for backward compat)
         """
         self.repo_path = Path(repo_path)
         self.objects: dict[str, Object] = {}
+        self.use_polyform = use_polyform and POLYFORM_AVAILABLE
         self._load_objects()
 
     def _cluster_signature(
@@ -191,25 +201,66 @@ class ObjectMemory:
     def save_to_repo(self) -> None:
         """
         Save objects to repository.
+        
+        Uses PrimeFluxInt encoding if use_polyform is True, otherwise JSON.
         """
         objects_dir = self.repo_path / "experience"
         objects_dir.mkdir(parents=True, exist_ok=True)
-        
-        objects_file = objects_dir / "objects.json"
         
         objects_data = {
             sig: obj.to_dict()
             for sig, obj in self.objects.items()
         }
         
-        with open(objects_file, 'w') as f:
-            json.dump(objects_data, f, indent=2)
+        if self.use_polyform:
+            # Use PrimeFluxInt encoding
+            objects_file = objects_dir / "objects.pfi"
+            salt = int(hashlib.sha256(str(objects_data).encode()).hexdigest()[:8], 16)
+            pfi = PrimeFluxInt(salt=salt)
+            pfi.encode(objects_data, salt=salt)
+            
+            # Save as JSON representation of PrimeFluxInt
+            with open(objects_file, 'w') as f:
+                json.dump(pfi.to_dict(), f, indent=2)
+            
+            # Also save legacy JSON for backward compatibility
+            objects_file_json = objects_dir / "objects.json"
+            with open(objects_file_json, 'w') as f:
+                json.dump(objects_data, f, indent=2)
+        else:
+            # Traditional JSON
+            objects_file = objects_dir / "objects.json"
+            with open(objects_file, 'w') as f:
+                json.dump(objects_data, f, indent=2)
 
     def _load_objects(self) -> None:
         """
         Load objects from repository.
+        
+        Tries PrimeFluxInt format first if use_polyform is True, falls back to JSON.
         """
-        objects_file = self.repo_path / "experience" / "objects.json"
+        objects_dir = self.repo_path / "experience"
+        
+        if self.use_polyform:
+            # Try PrimeFluxInt format first
+            objects_file_pfi = objects_dir / "objects.pfi"
+            if objects_file_pfi.exists():
+                try:
+                    with open(objects_file_pfi, 'r') as f:
+                        pfi_data = json.load(f)
+                    
+                    pfi = PrimeFluxInt.from_dict(pfi_data)
+                    objects_data = pfi.decode('full')
+                    
+                    if isinstance(objects_data, dict):
+                        for signature, data in objects_data.items():
+                            self.objects[signature] = Object.from_dict(data)
+                        return
+                except Exception as e:
+                    print(f"Error loading objects from PrimeFluxInt: {e}, falling back to JSON")
+        
+        # Fall back to JSON (or if polyform not available)
+        objects_file = objects_dir / "objects.json"
         
         if not objects_file.exists():
             return
@@ -242,7 +293,6 @@ class ObjectMemory:
             
             if signature not in self.objects:
                 # Create new object
-                from .object_memory import Object
                 obj = Object(
                     signature=signature,
                     triplets=[],
