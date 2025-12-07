@@ -1,0 +1,15 @@
+# Core dependencies
+pytest>=7.0.0
+
+# Ollama integration
+ollama>=0.3.5
+
+# FastAPI integration
+fastapi>=0.115.0
+uvicorn>=0.32.0
+
+# Quantization support
+bitsandbytes>=0.43.3
+
+# Optional: sympy for prime factorization
+sympy>=1.12
