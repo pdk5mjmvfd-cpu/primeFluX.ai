@@ -114,8 +114,12 @@ class ParticleEngine:
         # Calculate base force
         force = self.calculate_force(particle, curvature, phase)
         
-        # If OrbitalChild, inherit force from parent
+        # If OrbitalChild, inherit force from parent and handle flux dip
         if isinstance(particle, OrbitalChild) and particle.parent_shell is not None:
+            # Flux dip: child.phase += flux_dip_prob * parent.phase
+            # Electron "time in nucleus" - phase influenced by parent
+            particle.phase += particle.flux_dip_prob * particle.parent_shell.phase
+            
             # Inherit force: inherit_force = parent.curvature * (π - e)
             inherit_force_magnitude = particle.parent_shell.curvature * (math.pi - math.e)
             
@@ -138,6 +142,17 @@ class ParticleEngine:
                         force[1] + inherit_force[1],
                         force[2] + inherit_force[2]
                     )
+            
+            # Inner constrains: Cap force by parent curvature * (π - e)
+            max_force = particle.parent_shell.curvature * (math.pi - math.e)
+            force_magnitude = math.sqrt(force[0]**2 + force[1]**2 + force[2]**2)
+            if force_magnitude > max_force:
+                scale = max_force / force_magnitude
+                force = (
+                    force[0] * scale,
+                    force[1] * scale,
+                    force[2] * scale
+                )
         
         # Update momentum
         particle.update_momentum(force, dt)
@@ -161,14 +176,15 @@ class ParticleEngine:
             self.update_particle(particle, curvature, phase, dt)
         
         # Atom movement: outer shells drive nucleus
+        # Outer drives movement, inner constrains identity
         if self.nucleus is not None:
-            # Calculate drag from outer shells
+            # Calculate drag from outer shells only (outer drives)
             atom_velocity = [0.0, 0.0, 0.0]
             
             for shell in self.shells:
                 for child in shell.children:
-                    # Child drag contributes to atom velocity
-                    if hasattr(child, 'drag'):
+                    # Only outer children (drive behavior) contribute to movement
+                    if child.behavior == "drive" and hasattr(child, 'drag'):
                         # Drag direction: from nucleus to child
                         dx = child.position[0] - self.nucleus.position[0]
                         dy = child.position[1] - self.nucleus.position[1]

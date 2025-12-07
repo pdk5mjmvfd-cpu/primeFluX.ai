@@ -37,7 +37,8 @@ class QuarkColor(Enum):
 
 def compute_orbital_suite(
     prime: int,
-    n_max: int = 3
+    n_max: int = 3,
+    presence_on: bool = True
 ) -> Dict[str, Any]:
     """
     Compute orbital suite for given prime.
@@ -45,11 +46,21 @@ def compute_orbital_suite(
     Args:
         prime: Prime number
         n_max: Maximum principal quantum number
+        presence_on: Whether event spaces are active
         
     Returns:
         Orbital suite dictionary
     """
+    if not presence_on:
+        return {
+            "prime": prime,
+            "orbital_count": 0,
+            "orbitals": [],
+            "status": "Static knot - atom as pure event space"
+        }
+    
     orbitals = []
+    max_layer = n_max
     
     for n in range(1, n_max + 1):
         for l in range(n):
@@ -60,19 +71,26 @@ def compute_orbital_suite(
                 # Calculate orbital radius
                 radius = n * n * prime / 100.0  # Scaled by prime
                 
+                # Determine behavior: outer drives, inner constrains
+                layer = n  # Layer number
+                behavior = "drive" if layer > max_layer / 2 else "constrain"
+                
                 orbitals.append({
                     "n": n,
                     "l": l,
                     "m": m,
                     "energy": energy,
                     "radius": radius,
-                    "prime": prime
+                    "prime": prime,
+                    "layer": layer,
+                    "behavior": behavior
                 })
     
     return {
         "prime": prime,
         "orbital_count": len(orbitals),
-        "orbitals": orbitals
+        "orbitals": orbitals,
+        "max_layer": max_layer
     }
 
 
@@ -110,6 +128,7 @@ def pf_atomic_orbitals(
     # Fill orbitals following Aufbau principle
     n = 1
     electron_count = 0
+    max_layer = 0
     
     while electron_count < num_electrons:
         for l in range(n):
@@ -128,6 +147,14 @@ def pf_atomic_orbitals(
                     nucleus_time_prob * random.uniform(-0.1, 0.1)
                 )
                 
+                # Determine behavior: outer drives, inner constrains
+                layer = n
+                if layer > max_layer:
+                    max_layer = layer
+                
+                # For children: behavior = "drive" if layer > max_layer / 2 else "constrain"
+                behavior = "drive" if layer > max_layer / 2 else "constrain"
+                
                 orbital = {
                     "n": n,
                     "l": l,
@@ -138,12 +165,25 @@ def pf_atomic_orbitals(
                     "quark_color": color.name,
                     "quark_phase": electron_phase,
                     "color_idx": color.color_idx,
-                    "active": presence_on  # Event space toggle
+                    "active": presence_on,  # Event space toggle
+                    "layer": layer,
+                    "behavior": behavior
                 }
                 orbitals.append(orbital)
                 electron_count += 1
         
         n += 1
+    
+    # Update behavior based on final max_layer
+    for orbital in orbitals:
+        if orbital["layer"] > max_layer / 2:
+            orbital["behavior"] = "drive"
+        else:
+            orbital["behavior"] = "constrain"
+    
+    if not presence_on:
+        # Return static knot message
+        return [{"status": "Static knot - atom as pure event space"}]
     
     return orbitals
 

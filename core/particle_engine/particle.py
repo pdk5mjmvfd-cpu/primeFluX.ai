@@ -7,6 +7,7 @@ Refactored from pf_particle.py
 from __future__ import annotations
 
 import math
+import random
 from dataclasses import dataclass, field
 from typing import Optional, Tuple, List
 
@@ -102,6 +103,9 @@ class OrbitalChild(PFParticle):
     freq: float = 1.0
     phase: float = 0.0
     drag: float = 0.0  # Drag force on parent nucleus
+    flux_dip_prob: float = 0.0  # Electron "time in nucleus"
+    layer: int = 0  # Layer number (outer = higher)
+    behavior: str = "constrain"  # "drive" or "constrain"
     
     def __post_init__(self):
         """Initialize child orbital properties."""
@@ -114,6 +118,9 @@ class OrbitalChild(PFParticle):
             # Phase: child phase = parent phase + (2π/3) * color_idx
             # Quark colors: 0 (RED), 2π/3 (GREEN), 4π/3 (BLUE)
             self.phase = self.parent_shell.phase + (2 * math.pi / 3) * self.color_idx
+            
+            # Flux dip probability: Electron "time in nucleus"
+            self.flux_dip_prob = random.uniform(0, 0.1)
 
 
 @dataclass
@@ -125,8 +132,12 @@ class OrbitalShell:
     phase: float = 0.0
     curvature: float = 1.0
     children: List[OrbitalChild] = field(default_factory=list)
+    max_layer: int = 0  # Maximum layer number
     
     def add_child(self, child: OrbitalChild):
         """Add child orbital to shell."""
         child.parent_shell = self
         self.children.append(child)
+        # Update max_layer
+        if child.layer > self.max_layer:
+            self.max_layer = child.layer
