@@ -32,6 +32,9 @@ from ApopToSiS.runtime.supervisor.supervisor import Supervisor
 from ApopToSiS.core.quanta import QuantaCompressor
 from ApopToSiS.api.user_interface import UserInterface
 from ApopToSiS.core.math.shells import Shell
+from ApopToSiS.core.capsule_validator import CapsuleValidator
+import json
+import os
 
 
 class ApopBootSequence:
@@ -69,6 +72,21 @@ class ApopBootSequence:
         Returns:
             Dictionary with all initialized components
         """
+        # 0. Load and validate ecosystem capsule
+        capsule_path = os.path.join(self.repo_path, "ECOSYSTEM_CAPSULE.json")
+        if os.path.exists(capsule_path):
+            try:
+                with open(capsule_path, 'r') as f:
+                    capsule_dict = json.load(f)
+                validator = CapsuleValidator(capsule_dict)
+                if validator.validate():
+                    fingerprint = validator.fingerprint()
+                    print(f"✓ Ecosystem capsule validated (fingerprint: {fingerprint[:16]}...)")
+                else:
+                    print("⚠ Ecosystem capsule validation warnings (continuing anyway)")
+            except Exception as e:
+                print(f"⚠ Failed to load/validate capsule: {e}")
+        
         # 1. PFState - First moment of consciousness
         self.pf_state = PFState(
             shell=Shell.PRESENCE,
