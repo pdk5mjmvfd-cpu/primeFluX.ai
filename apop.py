@@ -300,7 +300,7 @@ def main():
     parser.add_argument("--offline", action="store_true", help="Use offline LLM mode")
     parser.add_argument("--llm-salt", type=str, help="LLM salt (eidos, praxis, aegis)")
     parser.add_argument("--ui", action="store_true", help="Launch Streamlit UI")
-    parser.add_argument("--agora", action="store_true", help="Enable Agora sync (opt-in)")
+    parser.add_argument("--agora", action="store_true", help="Enable Agora sync (opt-in, discrete shells)")
     parser.add_argument("input", nargs="?", help="Input text (optional, will use interactive mode if not provided)")
     
     args = parser.parse_args()
@@ -333,6 +333,18 @@ def main():
                 return 0
         except ImportError:
             print("Warning: Offline LLM not available, falling back to normal mode")
+    
+    # Initialize Agora sync if enabled
+    if args.agora:
+        try:
+            from ApopToSiS.core.agora_sync import AgoraSyncClient
+            agora_client = AgoraSyncClient(enabled=True)
+            if agora_client.join_agora():
+                print("✓ Agora sync enabled (opt-in, discrete shells)")
+            else:
+                print("⚠ Agora sync failed to connect")
+        except ImportError:
+            print("⚠ Agora sync not available")
     
     # If input provided, process it
     if args.input:
