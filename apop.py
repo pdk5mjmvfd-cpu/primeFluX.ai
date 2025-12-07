@@ -63,6 +63,31 @@ from ApopToSiS.runtime.experience_state import ExperienceState
 # CoSy and PrimeFS imports
 from ApopToSiS.core.consensus import CoSyBridgeMain
 from ApopToSiS.pf_json import PFJsonGenerator, PFExpander
+# PF-aware agent router
+try:
+    from ApopToSiS.agents.router import AgentRouter
+    from ApopToSiS.core.distinction_packet import DistinctionPacket
+    AGENT_ROUTER_AVAILABLE = True
+except ImportError:
+    AGENT_ROUTER_AVAILABLE = False
+    AgentRouter = None
+    DistinctionPacket = None
+
+# QuantaCoin integration (optional)
+try:
+    from fluxai.quanta.quanta_core import QuantaCoin
+    QUANTA_AVAILABLE = True
+except ImportError:
+    QUANTA_AVAILABLE = False
+    QuantaCoin = None
+
+# Agora integration (optional)
+try:
+    from fluxai.agora.agora_core import AgoraEcosystem
+    AGORA_AVAILABLE = True
+except ImportError:
+    AGORA_AVAILABLE = False
+    AgoraEcosystem = None
 
 
 def init_runtime():
@@ -122,6 +147,331 @@ def init_runtime():
     print("✓ CoSy consensus active")
 
     return state, context, lcm, supervisor, registry, agents, rle, cosy, experience_state
+
+
+def handle_quanta_command(
+    user_input: str,
+    supervisor: Supervisor,
+    experience_manager: ExperienceManager
+) -> dict[str, Any]:
+    """
+    Handle quanta commands.
+    
+    Examples:
+        quanta txn: budget 250 scheels
+        quanta mint: telemetry
+        quanta stake: 100
+        quanta yield: 2
+    
+    Args:
+        user_input: User input string
+        supervisor: Supervisor instance
+        experience_manager: ExperienceManager instance
+        
+    Returns:
+        Command result dictionary
+    """
+    if not QUANTA_AVAILABLE:
+        return {
+            "status": "error",
+            "message": "QuantaCoin not available"
+        }
+    
+    tokens = user_input.lower().split()
+    
+    if len(tokens) < 2:
+        return {
+            "status": "error",
+            "message": "Invalid quanta command. Use: quanta txn|mint|stake|yield"
+        }
+    
+    command = tokens[1]
+    
+    if command == "txn" or command == "transaction":
+        # Parse transaction: "quanta txn: budget 250 scheels"
+        # Extract amount and merchant
+        amount = None
+        merchant = "unknown"
+        
+        # Look for numbers in the input
+        import re
+        numbers = re.findall(r'\d+\.?\d*', user_input)
+        if numbers:
+            amount = float(numbers[0])
+        
+        # Look for merchant name (after amount or in input)
+        merchant_keywords = ["scheels", "merchant", "store", "shop"]
+        for keyword in merchant_keywords:
+            if keyword in user_input.lower():
+                merchant = keyword
+                break
+        
+        if amount is None:
+            return {
+                "status": "error",
+                "message": "No amount specified in transaction"
+            }
+        
+        # Route through supervisor's quanta_router
+        txn_data = {
+            "amount": amount,
+            "merchant": merchant,
+            "holder_prime": 2  # Default prime
+        }
+        
+        result = supervisor.quanta_router(txn_data)
+        
+        # Etch to experience manager
+        if result.get("status") == "success":
+            quanta_used = result.get("burned", 0.0)
+            experience_delta = {
+                "txn_amount": amount,
+                "merchant": merchant,
+                "quanta_burned": quanta_used
+            }
+            experience_manager.quanta_etch(
+                experience_delta,
+                int(quanta_used),
+                holder_prime=2
+            )
+        
+        return result
+    
+    elif command == "mint":
+        # Mint from telemetry compression
+        try:
+            from fluxai.quanta.mining_pilot import MiningPilot
+            
+            pilot = MiningPilot(quanta_coin=supervisor.quanta_coin)
+            telemetry = pilot.generate_telemetry()
+            compression_ratio, quanta_minted = pilot.compress_telemetry(telemetry)
+            
+            return {
+                "status": "success",
+                "action": "mint",
+                "quanta_minted": quanta_minted,
+                "compression_ratio": compression_ratio,
+                "telemetry": telemetry
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Minting failed: {str(e)}"
+            }
+    
+    elif command == "stake":
+        # Stake balance
+        import re
+        numbers = re.findall(r'\d+\.?\d*', user_input)
+        if not numbers:
+            return {
+                "status": "error",
+                "message": "No amount specified for staking"
+            }
+        
+        amount = float(numbers[0])
+        holder_prime = 2  # Default
+        
+        if supervisor.quanta_coin:
+            staked = supervisor.quanta_coin.stake_balance(amount, holder_prime, ttl_epochs=30)
+            return {
+                "status": "success",
+                "action": "stake",
+                "amount": amount,
+                "staked_with_yield": staked,
+                "holder_prime": holder_prime
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "QuantaCoin not initialized"
+            }
+    
+    elif command == "yield":
+        # Calculate yield
+        import re
+        numbers = re.findall(r'\d+', user_input)
+        holder_prime = int(numbers[0]) if numbers else 2
+        epoch = int(numbers[1]) if len(numbers) > 1 else 0
+        
+        if supervisor.quanta_coin:
+            yield_info = supervisor.quanta_coin.agora_yield_calc(holder_prime, epoch)
+            return {
+                "status": "success",
+                "action": "yield",
+                "holder_prime": holder_prime,
+                "epoch": epoch,
+                **yield_info
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "QuantaCoin not initialized"
+            }
+    
+    else:
+        return {
+            "status": "error",
+            "message": f"Unknown quanta command: {command}"
+        }
+
+
+def handle_agora_command(
+    user_input: str,
+    supervisor: Supervisor,
+    experience_manager: ExperienceManager
+) -> dict[str, Any]:
+    """
+    Handle agora commands.
+    
+    Examples:
+        agora txn: budget 250 scheels
+        agora query: reversal curse
+        agora mining: telemetry
+    
+    Args:
+        user_input: User input string
+        supervisor: Supervisor instance
+        experience_manager: ExperienceManager instance
+        
+    Returns:
+        Command result dictionary
+    """
+    if not AGORA_AVAILABLE:
+        return {
+            "status": "error",
+            "message": "Agora ecosystem not available"
+        }
+    
+    tokens = user_input.lower().split()
+    
+    if len(tokens) < 2:
+        return {
+            "status": "error",
+            "message": "Invalid agora command. Use: agora txn|query|mining"
+        }
+    
+    command = tokens[1]
+    
+    if command == "txn" or command == "transaction":
+        # Parse transaction: "agora txn: budget 250 scheels"
+        import re
+        numbers = re.findall(r'\d+\.?\d*', user_input)
+        if not numbers:
+            return {
+                "status": "error",
+                "message": "No amount specified in transaction"
+            }
+        
+        amount = float(numbers[0])
+        merchant = "unknown"
+        merchant_keywords = ["scheels", "merchant", "store", "shop"]
+        for keyword in merchant_keywords:
+            if keyword in user_input.lower():
+                merchant = keyword
+                break
+        
+        # Route through supervisor's agora_router
+        txn_data = {
+            "amount": amount,
+            "merchant": merchant
+        }
+        
+        result = supervisor.agora_router("txn", txn_data)
+        
+        # Etch to experience manager
+        if result.get("status") == "success":
+            agent_prime = result.get("agent_prime", 2)
+            quanta_used = result.get("burn_stake", {}).get("burned", 0.0)
+            event_delta = {
+                "txn_amount": amount,
+                "merchant": merchant,
+                "quanta_burned": quanta_used
+            }
+            experience_manager.agora_etch(
+                event_delta,
+                int(quanta_used),
+                agent_prime=agent_prime
+            )
+        
+        return result
+    
+    elif command == "query":
+        # Query: "agora query: reversal curse"
+        query = user_input.split(":", 1)[1].strip() if ":" in user_input else " ".join(tokens[2:])
+        
+        if not query:
+            return {
+                "status": "error",
+                "message": "No query specified"
+            }
+        
+        # Route through supervisor's agora_router
+        query_data = {
+            "query": query
+        }
+        
+        result = supervisor.agora_router("query", query_data)
+        
+        # Etch to experience manager
+        if result.get("status") == "success":
+            agent_prime = result.get("agent_prime", 2)
+            grok_result = result.get("grokepedia_result", {})
+            quanta_minted = grok_result.get("compressed", {}).get("quanta_minted", 0)
+            event_delta = {
+                "query": query,
+                "quanta_minted": quanta_minted
+            }
+            experience_manager.agora_etch(
+                event_delta,
+                quanta_minted,
+                agent_prime=agent_prime
+            )
+        
+        return result
+    
+    elif command == "mining":
+        # Mining: "agora mining: telemetry"
+        # Generate telemetry data
+        try:
+            from fluxai.quanta.mining_pilot import MiningPilot
+            
+            pilot = MiningPilot(quanta_coin=supervisor.quanta_coin)
+            telemetry = pilot.generate_telemetry()
+            
+            # Route through supervisor's agora_router
+            mining_data = {
+                "telemetry": telemetry
+            }
+            
+            result = supervisor.agora_router("mining", mining_data)
+            
+            # Etch to experience manager
+            if result.get("status") == "success":
+                agent_prime = result.get("agent_prime", 2)
+                quanta_minted = result.get("quanta_minted", 0)
+                event_delta = {
+                    "mining": True,
+                    "quanta_minted": quanta_minted
+                }
+                experience_manager.agora_etch(
+                    event_delta,
+                    quanta_minted,
+                    agent_prime=agent_prime
+                )
+            
+            return result
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Mining failed: {str(e)}"
+            }
+    
+    else:
+        return {
+            "status": "error",
+            "message": f"Unknown agora command: {command}"
+        }
 
 
 def print_capsule(capsule: Capsule):
@@ -184,6 +534,24 @@ def run_apop_conversation():
                 if not user_input:
                     continue
                 
+                # Check for quanta commands
+                if user_input.lower().startswith("quanta"):
+                    quanta_result = handle_quanta_command(user_input, supervisor, experience_manager)
+                    if quanta_result:
+                        print("\n" + GREEN + "=== QUANTACOIN (ΦQ) ===" + RESET)
+                        print(json.dumps(quanta_result, indent=2))
+                        print(GREEN + "=========================" + RESET + "\n")
+                    continue
+                
+                # Check for agora commands
+                if user_input.lower().startswith("agora"):
+                    agora_result = handle_agora_command(user_input, supervisor, experience_manager)
+                    if agora_result:
+                        print("\n" + GREEN + "=== AGORA ECOSYSTEM ===" + RESET)
+                        print(json.dumps(agora_result, indent=2))
+                        print(GREEN + "========================" + RESET + "\n")
+                    continue
+                
                 # 1. Process through LCM → Capsule
                 tokens = user_input.split()
                 lcm.process_tokens(tokens)
@@ -210,8 +578,30 @@ def run_apop_conversation():
                 # 2. Update state from capsule
                 state.update_from_capsule(capsule)
                 
-                # 3. Supervisor: Route to an agent
-                agent = supervisor.route(state, agents)
+                # 2.5. PF-aware agent routing (if available)
+                agent = None
+                if AGENT_ROUTER_AVAILABLE and AgentRouter and DistinctionPacket:
+                    try:
+                        # Create distinction packet from input
+                        pkt = DistinctionPacket.from_input(user_input)
+                        
+                        # Route using PF-aware router
+                        agent_router = AgentRouter()
+                        agent_name = agent_router.route(pkt)
+                        
+                        # Log route to experience graph
+                        if experience_manager and hasattr(experience_manager, 'graph'):
+                            agent_router.log_route(pkt, agent_name, experience_manager.graph)
+                        
+                        # Find agent by name
+                        agent = next((a for a in agents if a.__class__.__name__.lower().startswith(agent_name)), None)
+                    except Exception:
+                        # Fallback to supervisor routing
+                        pass
+                
+                # 3. Supervisor: Route to an agent (fallback if PF router didn't work)
+                if agent is None:
+                    agent = supervisor.route(state, agents)
                 
                 if agent:
                     capsule.agent_trace.append(agent.__class__.__name__)
