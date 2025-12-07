@@ -19,5 +19,9 @@ streamlit==1.40.0
 plotly==5.24.0
 requests==2.32.0
 
+# Particle engine visualization
+matplotlib>=3.7.0
+numpy>=1.24.0
+
 # libp2p for Agora sync (optional, stub if unstable)
 # libp2p-py==0.1.2
