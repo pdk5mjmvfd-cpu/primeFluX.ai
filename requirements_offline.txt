@@ -1,0 +1,10 @@
+# Requirements for offline PrimeFlux AI runtime
+# Install with: pip install -r requirements_offline.txt
+
+# LLM support (choose one or both)
+llama-cpp-python>=0.2.0  # For GGUF models (llama.cpp)
+# mlx>=0.0.1  # For Apple Silicon (optional, uncomment if using)
+# mlx-lm>=0.0.1  # For Apple OpenELM (optional, uncomment if using)
+
+# Core dependencies (if any are needed)
+# Add other dependencies here as needed
