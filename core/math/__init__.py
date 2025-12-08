@@ -74,6 +74,10 @@ from .manifolds_5d import (
     curvature_5d,
     projection_3d,
 )
+from .pf_presence import PresenceVector
+from .pf_trig_osc import Oscillator
+from .pf_nat_energy import NatEnergyAuditor
+from .pf_quanta import mint_quanta
 
 __all__ = [
     # Shells
@@ -139,4 +143,9 @@ __all__ = [
     "embed_to_5d",
     "curvature_5d",
     "projection_3d",
+    # Presence
+    "PresenceVector",
+    "Oscillator",
+    "NatEnergyAuditor",
+    "mint_quanta",
 ]
