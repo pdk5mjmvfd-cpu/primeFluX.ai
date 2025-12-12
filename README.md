@@ -88,6 +88,8 @@ It is **not**:
 
 ## Quick Start
 
+**See [docs/SETUP.md](docs/SETUP.md) for complete setup instructions.**
+
 ### Installation
 
 **Option 1: pip install (Recommended)**
