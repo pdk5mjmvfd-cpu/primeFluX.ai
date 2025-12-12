@@ -1,6 +1,83 @@
 version: '3.8'
 
 services:
+  # LLM 1: phi-3-mini
+  llm1:
+    image: ghcr.io/ggerganov/llama.cpp:server
+    container_name: apoptosis_llm1
+    volumes:
+      - ./models:/models
+    command: --model /models/phi-3-mini.gguf --port 8080 --n-gpu-layers 99
+    ports:
+      - "8080:8080"
+    networks:
+      - apoptosis_net
+    restart: unless-stopped
+
+  # LLM 2: qwen2-0.5B
+  llm2:
+    image: ghcr.io/ggerganov/llama.cpp:server
+    container_name: apoptosis_llm2
+    volumes:
+      - ./models:/models
+    command: --model /models/qwen2-0.5b.gguf --port 8081 --n-gpu-layers 99
+    ports:
+      - "8081:8081"
+    networks:
+      - apoptosis_net
+    restart: unless-stopped
+
+  # LLM 3: tinyllama
+  llm3:
+    image: ghcr.io/ggerganov/llama.cpp:server
+    container_name: apoptosis_llm3
+    volumes:
+      - ./models:/models
+    command: --model /models/tinyllama.gguf --port 8082 --n-gpu-layers 99
+    ports:
+      - "8082:8082"
+    networks:
+      - apoptosis_net
+    restart: unless-stopped
+
+  # Coordinator: Multi-agent orchestrator
+  coordinator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ARCH: ${ARCH:-amd64}
+    container_name: apoptosis_coordinator
+    env_file:
+      - .env
+    environment:
+      - PRESENCE_OP=${PRESENCE_OP:-1}
+      - APOP_MODE=${APOP_MODE:-local}
+      - QUANTA_PATH=${QUANTA_PATH:-/app/experience/ledger.jsonl}
+      - LLM1_URL=http://llm1:8080
+      - LLM2_URL=http://llm2:8081
+      - LLM3_URL=http://llm3:8082
+    volumes:
+      - ./experience:/app/experience
+      - ./models:/app/models
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+    depends_on:
+      - llm1
+      - llm2
+      - llm3
+    networks:
+      - apoptosis_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    command: ["python", "-m", "uvicorn", "runtime.coordinator.coordinator_api:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  # Main Apop service (backward compatibility)
   apop:
     build:
       context: .
@@ -20,7 +97,7 @@ services:
       - ./models:/app/models
       - ./data:/app/data
     ports:
-      - "8000:8000"
+      - "8001:8000"
     networks:
       - apoptosis_net
     restart: unless-stopped
@@ -38,13 +115,13 @@ services:
     env_file:
       - .env
     environment:
-      - API_URL=http://apop:8000
+      - API_URL=http://coordinator:8000
     volumes:
       - ./experience:/app/experience
     ports:
       - "8501:8501"
     depends_on:
-      - apop
+      - coordinator
     networks:
       - apoptosis_net
     command: ["python", "-m", "streamlit", "run", "api/streamlit_ui.py", "--server.port=8501", "--server.address=0.0.0.0"]

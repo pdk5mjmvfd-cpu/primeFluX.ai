@@ -20,6 +20,7 @@ from ApopToSiS.runtime.router.router import (
     compute_agent_scores,
     select_agent,
 )
+from ApopToSiS.runtime.coordinator.ebb_flow import EbbFlow
 # CoSy and PrimeFS imports
 from ApopToSiS.core.consensus import CoSyBridgeMain
 from ApopToSiS.pf_json import PFJsonGenerator, PFExpander
@@ -68,6 +69,8 @@ class Supervisor:
         self.lcm = lcm or LCM(icm=self.icm)
         self.experience_manager = experience_manager
         self.consistency_engine = ConsistencyEngine()
+        # Initialize Ebb/Flow system
+        self.ebb_flow = EbbFlow()
         # Initialize consensus engine
         self.cosy = CoSyBridgeMain()
         self._last_capsule: Optional[Capsule] = None
@@ -97,7 +100,8 @@ class Supervisor:
         """
         Route capsule to appropriate agent based on PF metrics.
         
-        Uses PF-based routing with consistency bias.
+        Uses PF-based routing with consistency bias and Ebb/Flow integration.
+        Ebb/Flow provides policy layer (which agent?), Supervisor provides action layer.
         
         Args:
             state: Current PF state
@@ -109,7 +113,26 @@ class Supervisor:
         if not agents:
             return None
         
-        # Compute base agent scores
+        # Try Ebb/Flow routing first (if we have a capsule to convert to PresenceVector)
+        if self._last_capsule and self._last_capsule.raw_tokens:
+            try:
+                from ApopToSiS.core.math.pf_presence import PresenceVector
+                # Create presence vector from last capsule tokens
+                text = " ".join(self._last_capsule.raw_tokens)
+                event = PresenceVector.from_text(text)
+                
+                # Route via Ebb/Flow
+                agent_name = self.ebb_flow.route_event(event)
+                
+                # Find agent by name
+                agent_map = {agent.__class__.__name__.lower().replace("agent", ""): agent for agent in agents}
+                if agent_name in agent_map:
+                    return agent_map[agent_name]
+            except Exception:
+                # Fall back to standard routing if Ebb/Flow fails
+                pass
+        
+        # Compute base agent scores (standard routing)
         scores = compute_agent_scores(state, agents, self.icm, self.lcm)
         
         # Apply consistency bias if we have a last capsule

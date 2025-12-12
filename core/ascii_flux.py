@@ -2,6 +2,9 @@
 ASCII–Flux Shell — PrimeFlux-Compatible Text Coordinate Mapping
 
 Maps any input string as a PF-coordinate in a universal prompt manifold.
+
+NOTE: This module now delegates to core/prime_ascii.py for prime mapping.
+Maintains backward compatibility while using the new Prime ASCI system.
 """
 
 from __future__ import annotations
@@ -9,21 +12,32 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Dict, Any
 import math
+from .prime_ascii import get_prime_ascii
 
-# Very small prime table for mapping ASCII codes to "nearest" primes.
-# TODO: Replace with full PrimeFlux dual-rail 6k±1 mapping.
-_SMALL_PRIMES = [
-    2, 3, 5, 7, 11, 13, 17, 19, 23, 29,
-    31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
-    73, 79, 83, 89, 97, 101, 103, 107, 109, 113
-]
+# Delegate to Prime ASCI system
+_prime_ascii = get_prime_ascii()
 
 
 def _nearest_prime(n: int) -> int:
-    """Return a small prime 'near' n. Placeholder for PF prime-lattice."""
+    """
+    Return prime for ASCII code n.
+    
+    Now delegates to Prime ASCI system for proper mapping.
+    Maintains backward compatibility.
+    """
+    # Try to map ASCII code as character
+    char = chr(n) if 0 <= n < 128 else None
+    if char:
+        prime_id = _prime_ascii.encode_char(char)
+        if prime_id is not None:
+            return prime_id
+    
+    # Fallback: find nearest prime (legacy behavior)
+    # This should rarely be needed with full Prime ASCI mapping
     if n <= 2:
         return 2
-    # simple nearest search in our small table
+    # Simple nearest prime search (legacy)
+    _SMALL_PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101]
     best = _SMALL_PRIMES[0]
     best_diff = abs(best - n)
     for p in _SMALL_PRIMES[1:]:

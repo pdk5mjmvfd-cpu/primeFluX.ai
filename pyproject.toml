@@ -3,14 +3,26 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "apop-v3"
+name = "primeflux-ai"
 version = "3.0.0"
-description = "ApopAI v3 — PrimeFlux-powered runtime with ICM, LCM, and three-agent cognition loop"
+description = "PrimeFlux AI — Offline-first AGI runtime with multi-agent coordination"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [
-    {name = "FluxAI Runtime Contributors"}
+    {name = "ApopTosis AI LLC", email = "info@apoptosisai.com"}
+]
+keywords = ["ai", "agi", "primeflux", "apoptosis", "quantacoin", "offline", "llm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",

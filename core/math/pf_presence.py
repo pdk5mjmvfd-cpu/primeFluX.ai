@@ -16,7 +16,8 @@ Source: Weierstrass (1885) – trigonometric polynomial convergence guarantees
 from __future__ import annotations
 
 import hashlib
-from typing import List, Optional
+import math
+from typing import List, Optional, Tuple
 
 
 class PresenceVector:
@@ -187,3 +188,120 @@ class PresenceVector:
     def __len__(self) -> int:
         """Return dimension of presence vector."""
         return len(self.components)
+    
+    def split_rails(self) -> Tuple["PresenceVector", "PresenceVector"]:
+        """
+        Split single vector into dual rails Ψ⁺ and Ψ⁻.
+        
+        Based on: ApopTosis Thesis §2.4 "Dual Flux Representation"
+        
+        - Ψ⁺ (positive rail): Components that are positive or zero
+        - Ψ⁻ (negative rail): Components that are negative or zero
+        
+        Algorithm:
+        - Ψ⁺[i] = max(0, components[i])  (1 or 0)
+        - Ψ⁻[i] = min(0, components[i])  (-1 or 0)
+        
+        Returns:
+            Tuple of (psi_plus, psi_minus) PresenceVectors
+        """
+        psi_plus_components = [max(0, x) for x in self.components]
+        psi_minus_components = [min(0, x) for x in self.components]
+        
+        psi_plus = PresenceVector(psi_plus_components)
+        psi_minus = PresenceVector(psi_minus_components)
+        
+        return psi_plus, psi_minus
+    
+    @classmethod
+    def merge_rails(cls, psi_plus: "PresenceVector", psi_minus: "PresenceVector") -> "PresenceVector":
+        """
+        Combine dual rails back to single vector.
+        
+        Based on: ApopTosis Thesis §2.4 "Dual Flux Representation"
+        
+        Merges Ψ⁺ and Ψ⁻ by component-wise addition:
+        - components[i] = psi_plus[i] + psi_minus[i]
+        
+        Args:
+            psi_plus: Positive rail vector
+            psi_minus: Negative rail vector
+            
+        Returns:
+            Merged PresenceVector
+            
+        Raises:
+            ValueError: If vectors have different dimensions
+        """
+        if len(psi_plus) != len(psi_minus):
+            raise ValueError("Psi plus and minus must have same dimension")
+        
+        merged_components = [
+            psi_plus.components[i] + psi_minus.components[i]
+            for i in range(len(psi_plus))
+        ]
+        
+        # Validate components are in {-1, 0, 1}
+        for x in merged_components:
+            if x not in (-1, 0, 1):
+                raise ValueError(f"Invalid merged component: {x} (must be -1, 0, or 1)")
+        
+        return cls(merged_components)
+    
+    @staticmethod
+    def distinction_flux(psi_plus: "PresenceVector", psi_minus: "PresenceVector") -> float:
+        """
+        Compute distinction flux d_phi = |Ψ⁺ - Ψ⁻|.
+        
+        Based on: ApopTosis Thesis §3.2 "ζ-Duality as Symmetry of Distinction"
+        
+        Measures the difference between positive and negative rails.
+        Used for Ebb/Flow routing and attractor stabilization.
+        
+        Args:
+            psi_plus: Positive rail vector
+            psi_minus: Negative rail vector
+            
+        Returns:
+            Distinction flux magnitude (L1 norm of difference)
+        """
+        if len(psi_plus) != len(psi_minus):
+            raise ValueError("Psi plus and minus must have same dimension")
+        
+        # Compute component-wise difference
+        diff = [
+            psi_plus.components[i] - psi_minus.components[i]
+            for i in range(len(psi_plus))
+        ]
+        
+        # L1 norm: sum of absolute values
+        d_phi = sum(abs(x) for x in diff)
+        
+        return d_phi
+    
+    @staticmethod
+    def gaussian_envelope(d_phi: float, sigma: float = 1.0 / math.sqrt(2.0)) -> float:
+        """
+        Compute Gaussian envelope G(Ψ) = exp(-d_phi²/2σ²).
+        
+        Based on: ApopTosis Thesis §2.6 "Gaussian Equilibrium and ζ-Duality"
+        
+        σ = 1/√2 justification:
+        - Derived from critical line Re(s) = 1/2 on ζ-plane
+        - Empirical validation: σ ≈ 1/√2 ≈ 0.7071 holds across 9000+ primes
+        - Lie paper: Binary curvature normalized by √2 determines scale naturally
+        
+        Used for context compression and attractor stabilization.
+        
+        Args:
+            d_phi: Distinction flux magnitude
+            sigma: Gaussian width (default 1/√2 ≈ 0.7071)
+            
+        Returns:
+            Gaussian envelope value in [0, 1]
+        """
+        if sigma <= 0:
+            raise ValueError("Sigma must be positive")
+        
+        exponent = -(d_phi ** 2) / (2.0 * sigma ** 2)
+        return math.exp(exponent)

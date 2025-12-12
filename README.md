@@ -81,19 +81,60 @@ It is **not**:
 
 ## Quick Start
 
+### Installation
+
+**Option 1: pip install (Recommended)**
+```bash
+pip install primeflux-ai
+```
+
+**Option 2: git clone (Development)**
 ```bash
 git clone https://github.com/pdk5mjmvfd-cpu/primeFluX.ai
 cd primeFluX.ai
-pip install -r requirements.txt
+pip install -e .
+```
 
-# CLI usage
+**Option 3: Docker**
+```bash
+docker-compose up --build
+```
+
+### First Run
+
+**Terminal Initialization (Recommended for first-time users)**
+```bash
+python apop.py --init
+```
+
+This runs the 3-step initialization:
+1. Initialize runtime (PFState, ICM, LCM, Supervisor)
+2. Hardware-as-repo (explain repo structure = PF manifold)
+3. Absorb anything (demonstrate capability)
+
+### Usage
+
+**CLI usage**
+```bash
 python bin/apop-cli.py "Query" eidos
+# or
+apop "your query here"
+```
 
-# Interactive UI
+**Interactive UI**
+```bash
 python apop.py --ui  # Lab
+```
 
-# Particle simulation
+**Particle simulation**
+```bash
 python bin/apop-cli.py simulate 7 100 refinement
+```
+
+**Multi-agent coordinator (3 LLMs)**
+```bash
+docker-compose up  # Starts 3 LLM services + coordinator
+# API available at http://localhost:8000
 ```
 
 **Structure**: `core/` (PF), `runtime/` (boot), `agents/` (trinity), `experience/` (memory), `api/` (UI/CLI), `docs/papers/` (Thesis, Lie, Quantum, Agora).

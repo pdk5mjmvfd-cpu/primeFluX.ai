@@ -43,6 +43,7 @@ from .hamiltonians import (
     hamiltonian,
     curvature_well,
     collapse_energy,
+    HamiltonianTensor,
 )
 from .density import (
     distinction_density,
@@ -78,6 +79,23 @@ from .pf_presence import PresenceVector
 from .pf_trig_osc import Oscillator
 from .pf_nat_energy import NatEnergyAuditor
 from .pf_quanta import mint_quanta
+from .attractors import (
+    Attractor,
+    AttractorType,
+    AttractorRegistry,
+    get_attractor_registry,
+    check_convergence,
+    get_attractor_prime_id,
+    is_attractor_prime,
+)
+from .digit_propagation import (
+    propagate_01,
+    propagate_12,
+    check_reptend_convergence,
+    compute_zeta3,
+    propagate_to_attractor,
+    octave_duality,
+)
 
 __all__ = [
     # Shells
@@ -119,6 +137,7 @@ __all__ = [
     "hamiltonian",
     "curvature_well",
     "collapse_energy",
+    "HamiltonianTensor",
     # Density
     "distinction_density",
     "curvature_density",
@@ -148,4 +167,19 @@ __all__ = [
     "Oscillator",
     "NatEnergyAuditor",
     "mint_quanta",
+    # Attractors
+    "Attractor",
+    "AttractorType",
+    "AttractorRegistry",
+    "get_attractor_registry",
+    "check_convergence",
+    "get_attractor_prime_id",
+    "is_attractor_prime",
+    # Digit Propagation
+    "propagate_01",
+    "propagate_12",
+    "check_reptend_convergence",
+    "compute_zeta3",
+    "propagate_to_attractor",
+    "octave_duality",
 ]

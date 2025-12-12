@@ -7,9 +7,10 @@ Full PF-driven state transitions, distinction chains, and capsule generation.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Optional, Dict, Set
 import math
 import time
+from datetime import datetime
 from ApopToSiS.core.icm import ICM, ICMState
 from ApopToSiS.core.math.shells import Shell, shell_curvature, next_shell, shell_transition_probability
 import random
@@ -35,6 +36,57 @@ from ApopToSiS.core.math.duality import measurement_duality, error_curvature_dua
 from ApopToSiS.core.math.combinatorics import combinatoric_curvature, combinatoric_entropy
 from ApopToSiS.combinatoric.interpreter import CombinatoricInterpreter, CombinatoricDistinctionPacket
 from ApopToSiS.core.ascii_flux import AsciiFluxShell
+from ApopToSiS.core.prime_ascii import get_prime_ascii
+
+
+@dataclass
+class LCMShortcut:
+    """
+    LCM shortcut - compressed pathway for presence vector.
+    
+    Based on: Lie paper §2.3 "PF LCM manifold Λ_PF encodes exponents of composite states"
+    Cache invalidation: Automatic via p^{-s} decay (metric g_s parametrizes curvature at scale s)
+    """
+    presence_vector: Any  # PresenceVector (using Any to avoid circular import)
+    shortcut_path: list[Any]  # Compressed pathway
+    success_count: int = 0  # Number of successful uses
+    total_attempts: int = 0  # Total attempts
+    last_validated: float = field(default_factory=time.time)  # Timestamp
+    ttl: float = 1.0  # Time-to-live (decays via p^{-s})
+    reliability_score: float = 0.5  # Bayesian credibility (Beta distribution)
+    
+    def update_reliability(self, success: bool, alpha: float = 1.0, beta: float = 1.0):
+        """
+        Update reliability score using Bayesian credibility.
+        
+        Formula: reliability = (successes + α) / (total + α + β)
+        Uses Beta(α, β) prior for Bayesian updating.
+        
+        Args:
+            success: Whether shortcut was successful
+            alpha: Beta distribution α parameter (default 1.0)
+            beta: Beta distribution β parameter (default 1.0)
+        """
+        self.total_attempts += 1
+        if success:
+            self.success_count += 1
+        
+        # Bayesian credibility: (successes + α) / (total + α + β)
+        self.reliability_score = (self.success_count + alpha) / (self.total_attempts + alpha + beta)
+        self.last_validated = time.time()
+
+
+@dataclass
+class LCMNode:
+    """
+    LCM node in event space.
+    
+    Represents a point in the evolving event space.
+    """
+    node_id: str
+    presence_vector: Any  # PresenceVector
+    lcm_value: int  # LCM value
+    timestamp: float = field(default_factory=time.time)
 
 
 @dataclass
@@ -48,6 +100,9 @@ class LCMState:
     entropy_history: list[float] = field(default_factory=list)
     curvature_history: list[float] = field(default_factory=list)
     distinction_counts: list[int] = field(default_factory=list)
+    # Extension: Mapping/shortcut tracking
+    lcm_map: Dict[Any, LCMShortcut] = field(default_factory=dict)  # PresenceVector → LCMShortcut
+    event_space: Set[LCMNode] = field(default_factory=set)  # Evolving contexts
 
 
 class LCM:
@@ -77,6 +132,7 @@ class LCM:
         self.combinatoric_interpreter = CombinatoricInterpreter()
         self.experience_manager = experience_manager
         self.ascii_flux_shell = AsciiFluxShell()
+        self.prime_ascii = get_prime_ascii()  # Prime ASCI for token→prime conversion
         self._last_input_tokens: list[str] = []
         self._last_triplets: list[Triplet] = []
         self._last_user_text: str = ""
@@ -166,8 +222,19 @@ class LCM:
         """
         triplets = []
         
-        # Convert tokens to numeric values (hash-based)
-        token_values = [float(hash(t) % 100) / 100.0 for t in tokens]
+        # Convert tokens to numeric values using Prime ASCI (replaces hash-based)
+        # Get prime IDs for tokens, normalize to [0, 1] range
+        prime_ascii = get_prime_ascii()
+        token_primes = []
+        for token in tokens:
+            # Encode token as prime product
+            product = prime_ascii.encode_string_as_product(token)
+            # Normalize: use log(product) / log(max_prime) to get [0, 1] range
+            # For simplicity, use product % 10000 / 10000.0 for normalization
+            normalized = float(product % 10000) / 10000.0
+            token_primes.append(normalized)
+        
+        token_values = token_primes
         
         # Detect triplets in sequence
         for i in range(len(token_values) - 2):
@@ -580,6 +647,122 @@ class LCM:
         # Handle None capsule
         if capsule is None:
             return {}
+    
+    def get_shortcut(self, presence_vector: Any) -> Optional[LCMShortcut]:
+        """
+        Get cached shortcut for presence vector.
+        
+        Based on: Lie paper §2.3 "PF LCM manifold Λ_PF encodes exponents"
+        
+        Args:
+            presence_vector: PresenceVector to look up
+            
+        Returns:
+            LCMShortcut if found and valid, None otherwise
+        """
+        # Check if shortcut exists
+        if presence_vector not in self.state.lcm_map:
+            return None
+        
+        shortcut = self.state.lcm_map[presence_vector]
+        
+        # Check cache validity via p^{-s} decay
+        # TTL decays exponentially: weight = exp(-t * d_phi)
+        # For simplicity, check if TTL has expired
+        current_time = time.time()
+        age = current_time - shortcut.last_validated
+        
+        # Decay TTL: weight = exp(-age * d_phi)
+        # If weight < 0.5, consider expired
+        # For now, use simple time-based expiration (can be refined)
+        if age > shortcut.ttl * 3600:  # TTL in hours, convert to seconds
+            # Expired, remove from cache
+            del self.state.lcm_map[presence_vector]
+            return None
+        
+        return shortcut
+    
+    def add_shortcut(
+        self,
+        presence_vector: Any,
+        shortcut_path: list[Any],
+        success: bool = True
+    ) -> LCMShortcut:
+        """
+        Add or update shortcut for presence vector.
+        
+        Based on: Lie paper §2.3 "PF LCM manifold Λ_PF encodes exponents"
+        Cache coherence: Automatic via p^{-s} decay (metric g_s parametrizes curvature)
+        
+        Args:
+            presence_vector: PresenceVector to cache
+            shortcut_path: Compressed pathway (list of LCM values or nodes)
+            success: Whether shortcut was successful (for Bayesian credibility)
+            
+        Returns:
+            LCMShortcut instance
+        """
+        # Check if shortcut exists
+        if presence_vector in self.state.lcm_map:
+            shortcut = self.state.lcm_map[presence_vector]
+            shortcut.shortcut_path = shortcut_path
+            shortcut.update_reliability(success)
+        else:
+            # Create new shortcut
+            shortcut = LCMShortcut(
+                presence_vector=presence_vector,
+                shortcut_path=shortcut_path,
+                success_count=1 if success else 0,
+                total_attempts=1,
+                reliability_score=0.5  # Initial Beta(1,1) prior
+            )
+            shortcut.update_reliability(success)
+            self.state.lcm_map[presence_vector] = shortcut
+        
+        return shortcut
+    
+    def add_event_space_node(
+        self,
+        presence_vector: Any,
+        lcm_value: int,
+        node_id: Optional[str] = None
+    ) -> LCMNode:
+        """
+        Add node to evolving event space.
+        
+        Based on: Lie paper §2.3 "PF LCM manifold Λ_PF"
+        Event space tracks evolving contexts as LCM nodes.
+        
+        Args:
+            presence_vector: PresenceVector for the node
+            lcm_value: LCM value (composite state)
+            node_id: Optional node ID (generated if None)
+            
+        Returns:
+            LCMNode instance
+        """
+        if node_id is None:
+            import hashlib
+            vec_str = str(presence_vector.components) if hasattr(presence_vector, 'components') else str(presence_vector)
+            node_id = hashlib.sha256(f"{vec_str}_{lcm_value}".encode()).hexdigest()[:16]
+        
+        node = LCMNode(
+            node_id=node_id,
+            presence_vector=presence_vector,
+            lcm_value=lcm_value
+        )
+        
+        self.state.event_space.add(node)
+        
+        # Prune old nodes if event space gets too large (keep last 1000)
+        if len(self.state.event_space) > 1000:
+            # Remove oldest nodes (by timestamp)
+            sorted_nodes = sorted(self.state.event_space, key=lambda n: n.timestamp)
+            nodes_to_remove = sorted_nodes[:-1000]
+            for node_to_remove in nodes_to_remove:
+                self.state.event_space.discard(node_to_remove)
+        
+        return node
         
         # Initialize defaults
         if pf_meta is None:

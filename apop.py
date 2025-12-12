@@ -301,9 +301,20 @@ def main():
     parser.add_argument("--llm-salt", type=str, help="LLM salt (eidos, praxis, aegis)")
     parser.add_argument("--ui", action="store_true", help="Launch Streamlit UI")
     parser.add_argument("--agora", action="store_true", help="Enable Agora sync (opt-in, discrete shells)")
+    parser.add_argument("--init", action="store_true", help="Run terminal initialization flow")
     parser.add_argument("input", nargs="?", help="Input text (optional, will use interactive mode if not provided)")
     
     args = parser.parse_args()
+    
+    # Terminal initialization flow
+    if args.init:
+        try:
+            from ApopToSiS.runtime.terminal_init import run_terminal_init
+            success = run_terminal_init()
+            return 0 if success else 1
+        except ImportError:
+            print("Error: terminal_init module not found")
+            return 1
     
     # If UI flag, launch Streamlit
     if args.ui:
