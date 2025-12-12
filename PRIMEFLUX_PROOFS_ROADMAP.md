@@ -21,23 +21,38 @@ All proofs align with **STEM + LANG = SAFE**:
 
 ## Part 1: Data Compression Proofs
 
-### 1.1 Lossless Compression Theorem (PROVEN)
+### 1.1 Lossless Compression Theorem (PARTIALLY PROVEN)
 
-**Statement:** Any text T can be compressed to a set of prime exponents {p_i^e_i} and perfectly recovered.
+**Statement:** Any text T can be compressed to a set of prime exponents {p_i^e_i} and the character multiset perfectly recovered.
+
+**Current Status:**
+- **Character Multiset Recovery**: ✅ PROVEN (100% recovery of character counts)
+- **Exact String Recovery**: ❌ NOT YET (order information lost in current implementation)
 
 **Proof:**
 - **Fundamental Theorem of Arithmetic**: Every integer > 1 factors uniquely into primes
 - **Prime ASCI Mapping**: Bijective char → prime (A=2, a=103, etc.)
-- **Compression**: `compress(T) = Counter(PRIME_ASCI[c] for c in T)`
-- **Decompression**: `decompress(factors) = ''.join(REVERSE_PRIME_ASCI[p] * e for p,e in sorted(factors))`
+- **Compression**: `compress(T) = Counter(PRIME_ASCI[c] for c in T)` (character frequencies)
+- **Decompression**: `decompress(factors) = ''.join(REVERSE_PRIME_ASCI[p] * e for p,e in sorted(factors))` (sorted by prime)
+
+**Limitation:**
+- Current implementation sorts by prime value → loses character order
+- Recovered text is character multiset, not exact string
+- Example: "hello" → {h:1, e:1, l:2, o:1} → "ehllo" (sorted)
+
+**Solutions:**
+1. **Order Preservation**: Store position indices with prime factors
+2. **Run-Length Encoding**: Compress runs of same character
+3. **Hybrid Approach**: Compress frequent patterns, store positions for rare characters
 
 **Empirical Validation:**
-- Tested on 5 manuscripts: 100% recovery rate
+- Character multiset: 100% recovery rate
+- Exact string: Needs order preservation enhancement
 - Average compression: ~180:1 (text → ~50 prime distinctions)
 - Case-sensitive: A≠a (different primes)
 - Newline preservation: `\n=251`
 
-**Implementation:** `core/prime_ascii.py` (v2.0)
+**Implementation:** `core/prime_ascii.py` (v2.0) - needs enhancement for order preservation
 
 ### 1.2 Compression Ratio Bounds
 
