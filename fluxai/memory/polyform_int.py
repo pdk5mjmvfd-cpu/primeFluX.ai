@@ -147,6 +147,11 @@ class PrimeFluxInt:
     PrimeFlux polyform integer - encrypted reversible integer.
     
     Acts as encrypted polyform embodying classes, methods, and interfaces.
+    
+    Extended with OOP number system integration:
+    - Numbers as objects (primes=classes, composites=methods, attractors=interfaces)
+    - Factorization = class decomposition
+    - Multiplication = method composition
     """
     
     salt: int
@@ -155,6 +160,7 @@ class PrimeFluxInt:
     _compressed: Optional[bytes] = None
     _original_json: Optional[str] = None  # Store original JSON for full recovery
     _huffman: Optional[ZipNNHuffman] = None
+    _number_class: Optional[Any] = None  # OOP number class instance
     
     def __init__(
         self,
@@ -186,6 +192,53 @@ class PrimeFluxInt:
     def _int_to_payload(self, value: int) -> str:
         """Convert integer to hex string payload."""
         return hex(value)[2:]
+    
+    def get_number_class(self):
+        """
+        Get OOP number class representation.
+        
+        Returns:
+            Number object (Prime, Composite, or AttractorPrime)
+        """
+        if self._number_class is None:
+            import sys
+            from pathlib import Path
+            _project_root = Path(__file__).parent.parent.parent.parent
+            if str(_project_root) not in sys.path:
+                sys.path.insert(0, str(_project_root))
+            from core.math.number_classes import create_number
+            value = self._payload_to_int()
+            self._number_class = create_number(value)
+        return self._number_class
+    
+    def factorize(self) -> List[Tuple[int, int]]:
+        """
+        Factorize as class decomposition.
+        
+        Returns:
+            List of (prime, exponent) tuples
+        """
+        num_class = self.get_number_class()
+        return num_class.factorize()
+    
+    def multiply(self, other: 'PrimeFluxInt') -> 'PrimeFluxInt':
+        """
+        Multiply as method composition.
+        
+        Args:
+            other: Another PrimeFluxInt
+            
+        Returns:
+            New PrimeFluxInt (composite)
+        """
+        num_class = self.get_number_class()
+        other_class = other.get_number_class()
+        result_class = num_class.multiply(other_class)
+        
+        # Create new PrimeFluxInt from result
+        result_value = result_class.value
+        result_payload = self._int_to_payload(result_value)
+        return PrimeFluxInt(salt=self.salt, payload=result_payload, _number_class=result_class)
     
     def _matryoshka_nest(self, data: Any, depth: int = 2) -> int:
         """

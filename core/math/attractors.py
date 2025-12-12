@@ -230,6 +230,59 @@ class AttractorRegistry:
         """
         return prime_id in self._attractors
     
+    def get_field_strength(self, attractor: Attractor, position: tuple[float, float, float, float]) -> float:
+        """
+        Get relativistic field strength at position.
+        
+        Args:
+            attractor: Attractor creating the field
+            position: Position (t, x, y, z)
+            
+        Returns:
+            Field strength magnitude
+        """
+        return get_field_strength(attractor, position)
+    
+    def get_path_probability(self, path: List[float], attractor: Attractor) -> float:
+        """
+        Get probabilistic path probability to attractor.
+        
+        Args:
+            path: Path as list of values
+            attractor: Target attractor
+            
+        Returns:
+            Path probability (0.0 to 1.0)
+        """
+        return get_path_probability(path, attractor)
+    
+    def get_number_class(self, number: int) -> str:
+        """
+        Get OOP classification of number.
+        
+        Args:
+            number: Integer to classify
+            
+        Returns:
+            Classification: "prime", "composite", or "attractor"
+        """
+        return get_number_class(number)
+    
+    def validate_limit(self, sequence: List[float], attractor: Attractor, 
+                      tolerance: float = 1e-10) -> bool:
+        """
+        Validate limit alignment: sequence converges to attractor.
+        
+        Args:
+            sequence: Sequence of values
+            attractor: Target attractor
+            tolerance: Convergence tolerance
+            
+        Returns:
+            True if sequence converges to attractor
+        """
+        return validate_limit(sequence, attractor, tolerance)
+    
     def register_prime_reptend(self, prime: int) -> Attractor:
         """
         Register a prime reptend as an attractor.
@@ -355,4 +408,98 @@ def is_attractor_prime(prime_id: int) -> bool:
     """
     registry = get_attractor_registry()
     return registry.is_attractor_prime(prime_id)
+
+
+def get_field_strength(attractor: Attractor, position: tuple[float, float, float, float]) -> float:
+    """
+    Get relativistic field strength at position.
+    
+    Uses relativistic field theory to compute field strength.
+    
+    Args:
+        attractor: Attractor creating the field
+        position: Position (t, x, y, z)
+        
+    Returns:
+        Field strength magnitude
+    """
+    from .relativistic_fields import AttractorField
+    
+    if attractor.value is None:
+        return 0.0
+    
+    field = AttractorField(attractor.value, attractor.name)
+    return field.field_strength(position)
+
+
+def get_path_probability(path: List[float], attractor: Attractor) -> float:
+    """
+    Get probabilistic path probability to attractor.
+    
+    Uses path integral formulation.
+    
+    Args:
+        path: Path as list of values
+        attractor: Target attractor
+        
+    Returns:
+        Path probability (0.0 to 1.0)
+    """
+    from .path_integrals import Path, path_probability
+    
+    if not path or attractor.value is None:
+        return 0.0
+    
+    # Create path from list
+    def trajectory(t: float) -> float:
+        if t < 0 or t >= len(path):
+            return path[-1] if path else 0.0
+        idx = int(t * (len(path) - 1))
+        return path[min(idx, len(path) - 1)]
+    
+    path_obj = Path(trajectory, 0.0, 1.0)
+    return path_probability(path_obj, attractor)
+
+
+def get_number_class(number: int) -> str:
+    """
+    Get OOP classification of number.
+    
+    Args:
+        number: Integer to classify
+        
+    Returns:
+        Classification: "prime", "composite", or "attractor"
+    """
+    from .number_classes import create_number, AttractorPrime, Prime
+    
+    num_obj = create_number(number)
+    
+    if isinstance(num_obj, AttractorPrime):
+        return "attractor_prime"
+    elif isinstance(num_obj, Prime):
+        return "prime"
+    else:
+        return "composite"
+
+
+def validate_limit(sequence: List[float], attractor: Attractor, 
+                  tolerance: float = 1e-10) -> bool:
+    """
+    Validate limit alignment: sequence converges to attractor.
+    
+    Args:
+        sequence: Sequence of values
+        attractor: Target attractor
+        tolerance: Convergence tolerance
+        
+    Returns:
+        True if sequence converges to attractor
+    """
+    if not sequence or attractor.value is None:
+        return False
+    
+    # Check if last value is near attractor
+    final_value = sequence[-1]
+    return abs(final_value - attractor.value) < tolerance
 

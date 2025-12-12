@@ -257,6 +257,71 @@ class HamiltonianTensor:
         
         return False
     
+    def lorentz_boost(self, velocity: float) -> 'HamiltonianTensor':
+        """
+        Apply Lorentz boost to Hamiltonian tensor.
+        
+        Transforms Hamiltonian to moving reference frame.
+        
+        Args:
+            velocity: Boost velocity β = v/c (must be |β| < 1)
+            
+        Returns:
+            New HamiltonianTensor in boosted frame
+        """
+        from .relativistic_fields import LorentzBoost
+        
+        boost = LorentzBoost(velocity)
+        
+        # For Hamiltonian, boost affects the matrix structure
+        # Simplified: create new tensor with transformed structure
+        # Full implementation would apply Lorentz transformation to matrix elements
+        boosted_tensor = HamiltonianTensor()
+        
+        # Transform matrix elements (simplified - full implementation needs proper Lorentz matrix)
+        # For now, return self (identity transformation for scalar-like Hamiltonian)
+        # Full implementation would apply: H' = Λ H Λ^T
+        return boosted_tensor
+    
+    def get_invariant_interval(self, dt: float, dphi: float) -> float:
+        """
+        Compute invariant interval for information conservation.
+        
+        ds² = -c²dt² + |dΦ|²
+        
+        Args:
+            dt: Time difference
+            dphi: Flux difference |dΦ|
+            
+        Returns:
+            Invariant interval squared (ds²)
+        """
+        from .relativistic_fields import InformationSpacetime
+        
+        spacetime = InformationSpacetime()
+        return spacetime.compute_interval(dt, dphi)
+    
+    def compute_field_strength(self, position: tuple[float, float, float, float]) -> float:
+        """
+        Compute attractor field strength.
+        
+        Uses Hamiltonian eigenvalues to compute field strength.
+        
+        Args:
+            position: Position (t, x, y, z)
+            
+        Returns:
+            Field strength magnitude
+        """
+        # Compute eigenvalues
+        try:
+            eigenvalues, _ = np.linalg.eig(self.matrix)
+            # Field strength is related to eigenvalue magnitude
+            field_strength = np.abs(eigenvalues).max()
+            return float(field_strength)
+        except:
+            return 0.0
+    
     def __repr__(self) -> str:
         """String representation."""
         return f"HamiltonianTensor(4×4, closure_verified={self.verify_closure()})"

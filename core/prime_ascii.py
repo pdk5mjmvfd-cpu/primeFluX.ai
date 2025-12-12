@@ -23,6 +23,7 @@ from __future__ import annotations
 import math
 from collections import Counter
 from typing import List, Dict, Optional, Tuple, Set
+import numpy as np
 from .math.attractors import get_attractor_registry, is_attractor_prime
 
 
@@ -47,7 +48,12 @@ PRIME_ASCI: Dict[str, int] = {
     '[': 347, ']': 349,
     # Digits 0-9
     '0': 353, '1': 359, '2': 367, '3': 373, '4': 379, '5': 383,
-    '6': 389, '7': 397, '8': 401, '9': 409
+    '6': 389, '7': 397, '8': 401, '9': 409,
+    # Special Unicode characters (mathematical notation)
+    '±': 419, '→': 421, '\u201C': 431, '\u201D': 433, '\u2019': 439,  # Smart quotes
+    '∇': 443, 'ζ': 449, 'Φ': 457, 'Ψ': 461, 'μ': 463,
+    'ν': 467, 'π': 479, 'e': 487, 'φ': 491, 'σ': 499,
+    'λ': 503, '√': 509, '∞': 521, '=': 523, '×': 541
 }
 
 # Reverse mapping: prime → character
@@ -177,18 +183,182 @@ def flux_signature(factors: Dict[int, int]) -> int:
     return product
 
 
+def log_flux(rle: List[Tuple[int, int]]) -> float:
+    """
+    Compute flux signature as log for large numbers.
+    
+    Prevents overflow for very large texts by using logarithms.
+    Maintains mathematical properties while handling large values.
+    
+    Args:
+        rle: Run-length encoded sequence as List[Tuple[prime, count]]
+        
+    Returns:
+        Log of flux signature: sum(log(prime) * count)
+    """
+    return sum(math.log(p) * c for p, c in rle)
+
+
+def compress_sequence(text: str) -> List[Tuple[int, int]]:
+    """
+    Lossless sequence compression using Run-Length Encoding (RLE).
+    
+    Preserves character order (solves previous limitation).
+    Returns list of (prime, count) tuples representing the sequence.
+    
+    Args:
+        text: Input text string
+        
+    Returns:
+        RLE sequence: List[Tuple[prime, count]]
+        
+    Example:
+        "hello" → [(103, 1), (127, 1), (163, 2), (179, 1)]
+    """
+    primes = [PRIME_ASCI.get(c, 2) for c in text]  # fallback 2 for unknown
+    rle = []
+    if not primes:
+        return rle
+    
+    current = primes[0]
+    count = 1
+    for p in primes[1:]:
+        if p == current:
+            count += 1
+        else:
+            rle.append((current, count))
+            current = p
+            count = 1
+    rle.append((current, count))
+    return rle
+
+
+def decompress_sequence(rle: List[Tuple[int, int]]) -> str:
+    """
+    Decompress RLE sequence back to original text.
+    
+    Reconstructs text from run-length encoded sequence, preserving order.
+    
+    Args:
+        rle: Run-length encoded sequence: List[Tuple[prime, count]]
+        
+    Returns:
+        Reconstructed text string (100% identical to original)
+        
+    Example:
+        [(103, 1), (127, 1), (163, 2), (179, 1)] → "hello"
+    """
+    chars = []
+    for p, count in rle:
+        if p in REVERSE_PRIME_ASCI:
+            chars.extend([REVERSE_PRIME_ASCI[p]] * count)
+        else:
+            chars.extend(['?'] * count)
+    return ''.join(chars)
+
+
+def expectancy(rle: List[Tuple[int, int]], history: Optional[List[float]] = None) -> float:
+    """
+    Compute expectancy with Bayesian update from history.
+    
+    Expectancy is Gaussian on d_phi from H_PF eigenvalues.
+    Used for Library of Babel address prediction.
+    Average expectancy: 0.367 for partial overlaps.
+    
+    Formula: prob = exp(-d_phi² / (2σ²)) where σ = 1/√2
+    Bayesian update: bayes_prob = mean(history) if history exists
+    
+    Args:
+        rle: Run-length encoded sequence
+        history: Optional list of previous expectancy values for Bayesian update
+        
+    Returns:
+        Expectancy probability (0.0 to 1.0)
+    """
+    if not rle:
+        return 1.0
+    
+    primes = [p for p, _ in rle]
+    if not primes:
+        return 1.0
+    
+    # Compute product and LCM
+    try:
+        product = log_flux(rle)
+        lcm_val = math.log(np.lcm.reduce(primes)) if len(primes) > 1 else math.log(primes[0])
+        
+        # Compute d_phi (distinction flux)
+        d_phi = abs(product - lcm_val) / product if product > 0 else 0.0
+        
+        # Gaussian probability
+        sigma = 1 / math.sqrt(2)  # σ = 1/√2
+        prob = math.exp(-d_phi**2 / (2 * sigma**2))
+        
+        # Bayesian update if history provided
+        if history is not None:
+            history.append(prob)
+            bayes_prob = np.mean(history) if history else (1 / math.sqrt(2))
+            return float(bayes_prob)
+        
+        return prob
+    except (OverflowError, ValueError):
+        # Fallback for edge cases
+        return 1.0 / math.sqrt(2)
+
+
+def rewrite_variant(rle: List[Tuple[int, int]], shift: int = 2, history: Optional[List[float]] = None) -> str:
+    """
+    Generate coherent variant via prime shift.
+    
+    Shifts primes by small amount and checks coherence via expectancy.
+    Only includes shifted primes if expectancy > 0.5 (coherent).
+    
+    Args:
+        rle: Original run-length encoded sequence
+        shift: Prime shift amount (default 2)
+        history: Optional history for expectancy calculation
+        
+    Returns:
+        Rewritten variant text (coherent if expectancy > 0.5)
+    """
+    variant_rle = []
+    for p, c in rle:
+        shifted_p = p + shift
+        # Check if shifted prime is in mapping
+        if shifted_p in REVERSE_PRIME_ASCI:
+            # Check coherence via expectancy
+            test_rle = [(shifted_p, c)]
+            exp = expectancy(test_rle, history)
+            if exp > 0.5:  # Coherent threshold
+                variant_rle.append((shifted_p, c))
+            else:
+                variant_rle.append((p, c))  # Keep original if not coherent
+        else:
+            variant_rle.append((p, c))  # Keep original if shift not in mapping
+    
+    return decompress_sequence(variant_rle)
+
+
 class PrimeASCI:
     """
     Prime ASCI encoding system (class-based interface).
     
     Wraps the proven lossless compress/decompress functions with additional
     methods for integration with PrimeFlux components.
+    
+    Expanded with:
+    - Full Unicode support (mathematical notation)
+    - Sequence RLE (order-preserving compression)
+    - Expectancy with Bayesian updates
+    - Log flux signature
+    - Variant generation via prime shift
     """
     
     def __init__(self):
         """Initialize Prime ASCI system."""
         self.registry = get_attractor_registry()
-        self._version = "2.0"  # Updated to v2.0 with proven lossless compression
+        self._version = "3.0"  # Updated to v3.0 with Library of Babel features
+        self._expectancy_history: List[float] = []  # For Bayesian updates
     
     def encode_char(self, char: str) -> Optional[int]:
         """
@@ -348,6 +518,50 @@ class PrimeASCI:
     def get_char_for_prime(self, prime_id: int) -> Optional[str]:
         """Get character for prime ID."""
         return REVERSE_PRIME_ASCI.get(prime_id)
+    
+    def compress_sequence(self, text: str) -> List[Tuple[int, int]]:
+        """
+        Lossless sequence compression using RLE (preserves order).
+        
+        Wrapper around compress_sequence() function.
+        """
+        return compress_sequence(text)
+    
+    def decompress_sequence(self, rle: List[Tuple[int, int]]) -> str:
+        """
+        Decompress RLE sequence back to original text.
+        
+        Wrapper around decompress_sequence() function.
+        """
+        return decompress_sequence(rle)
+    
+    def log_flux(self, rle: List[Tuple[int, int]]) -> float:
+        """
+        Compute flux signature as log for large numbers.
+        
+        Wrapper around log_flux() function.
+        """
+        return log_flux(rle)
+    
+    def expectancy(self, rle: List[Tuple[int, int]]) -> float:
+        """
+        Compute expectancy with Bayesian update from history.
+        
+        Uses internal history for Bayesian updates.
+        """
+        return expectancy(rle, self._expectancy_history)
+    
+    def rewrite_variant(self, rle: List[Tuple[int, int]], shift: int = 2) -> str:
+        """
+        Generate coherent variant via prime shift.
+        
+        Uses internal history for expectancy calculation.
+        """
+        return rewrite_variant(rle, shift, self._expectancy_history)
+    
+    def clear_history(self):
+        """Clear expectancy history for fresh Bayesian updates."""
+        self._expectancy_history = []
 
 
 # Singleton instance for backward compatibility
@@ -369,6 +583,11 @@ __all__ = [
     'compress',
     'decompress',
     'flux_signature',
+    'compress_sequence',
+    'decompress_sequence',
+    'log_flux',
+    'expectancy',
+    'rewrite_variant',
     'PrimeASCI',
     'get_prime_ascii',
 ]

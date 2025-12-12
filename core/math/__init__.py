@@ -45,6 +45,65 @@ from .hamiltonians import (
     collapse_energy,
     HamiltonianTensor,
 )
+
+# New modules
+from .relativistic_fields import (
+    LorentzBoost,
+    InformationSpacetime,
+    AttractorField,
+    compute_field_interference,
+    C_INFO,
+)
+
+from .number_classes import (
+    Number,
+    Prime,
+    AttractorPrime,
+    Composite,
+    PowerComposite,
+    ProductComposite,
+    AttractorInterface,
+    create_number,
+)
+
+from .limit_validation import (
+    Limit,
+    LimitType,
+    validate_limit_alignment,
+    validate_attractor_convergence,
+    check_path_independence_multiple_paths,
+)
+
+from .path_integrals import (
+    Path,
+    action_integral,
+    path_probability,
+    path_integral,
+    most_probable_path,
+    superposition_of_paths,
+    verify_path_independence,
+    probabilistic_closure,
+    HBAR_INFO,
+)
+
+from .path_independence import (
+    compute_reptend_path,
+    compute_continued_fraction_path,
+    compute_machin_series_path,
+    verify_multiple_paths_to_attractor,
+    test_pi_path_independence,
+)
+
+from .reference_frames import (
+    ReferenceFrame,
+    ReferenceFrameTransformer,
+    UnifiedStructure,
+)
+
+from .library_of_babel import (
+    LibraryOfBabel,
+    get_library_of_babel,
+)
 from .density import (
     distinction_density,
     curvature_density,
@@ -182,4 +241,48 @@ __all__ = [
     "compute_zeta3",
     "propagate_to_attractor",
     "octave_duality",
+    # Relativistic Fields
+    "LorentzBoost",
+    "InformationSpacetime",
+    "AttractorField",
+    "compute_field_interference",
+    "C_INFO",
+    # Number Classes
+    "Number",
+    "Prime",
+    "AttractorPrime",
+    "Composite",
+    "PowerComposite",
+    "ProductComposite",
+    "AttractorInterface",
+    "create_number",
+    # Limit Validation
+    "Limit",
+    "LimitType",
+    "validate_limit_alignment",
+    "validate_attractor_convergence",
+    "check_path_independence_multiple_paths",
+    # Path Integrals
+    "Path",
+    "action_integral",
+    "path_probability",
+    "path_integral",
+    "most_probable_path",
+    "superposition_of_paths",
+    "verify_path_independence",
+    "probabilistic_closure",
+    "HBAR_INFO",
+    # Path Independence
+    "compute_reptend_path",
+    "compute_continued_fraction_path",
+    "compute_machin_series_path",
+    "verify_multiple_paths_to_attractor",
+    "test_pi_path_independence",
+    # Reference Frames
+    "ReferenceFrame",
+    "ReferenceFrameTransformer",
+    "UnifiedStructure",
+    # Library of Babel
+    "LibraryOfBabel",
+    "get_library_of_babel",
 ]
